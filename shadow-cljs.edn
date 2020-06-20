@@ -1,0 +1,21 @@
+{:builds
+ {:lib-dev
+  {:modules    {:main {:entries [cljs.user
+                                 dvlopt.interval]}}
+   :output-dir "public/js"
+   :target     :browser}
+  
+  :test
+  {:target    :browser-test
+   :runner-ns lambdaisland.chui.shadow.browser-runner
+   :test-dir  "chui"}}
+
+ :deps
+ {:alias [:cljs]}
+ 
+ :dev-http
+ {8080 "public"}
+ 
+ :nrepl
+ {:port 4000}
+ }
