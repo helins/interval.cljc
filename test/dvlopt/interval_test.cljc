@@ -14,14 +14,14 @@
 ;;;;;;;;;;
 
 
-(t/deftest assoc-init
+(t/deftest mark-init
 
   ;; Creating first segment in tree.
 
-  (let [tree (interval/assoc (interval/tree)
-                             5
-                             10
-                             :x)]
+  (let [tree (interval/mark (interval/tree)
+                            5
+                            10
+                            :x)]
 
     (t/is (= (sorted-map [5 10]
                          #{:x})
@@ -41,17 +41,17 @@
 
 
 
-(t/deftest assoc-disjoint
+(t/deftest mark-disjoint
 
   ;; Creating second segment in tree.
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :x)
-                 (interval/assoc 30
-                                 35
-                                 :y))]
+                 (interval/mark 5
+                                10
+                                :x)
+                 (interval/mark 30
+                                35
+                                :y))]
 
     (t/is (= (sorted-map [5 10]  #{:x}
                          [30 35] #{:y})
@@ -84,17 +84,17 @@
 
 
 
-(t/deftest assoc-meet
+(t/deftest mark-meet
 
   ;; X MEETS Y tree
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 0
-                                 5
-                                 :x)
-                 (interval/assoc 5
-                                 10
-                                 :y))]
+                 (interval/mark 0
+                                5
+                                :x)
+                 (interval/mark 5
+                                10
+                                :y))]
 
     (t/is (= (sorted-map [0 5]  #{:x}
                          [5 10] #{:y})
@@ -124,17 +124,17 @@
 
 
 
-(t/deftest assoc-equal
+(t/deftest mark-equal
 
   ;; X = Y tree
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :x)
-                 (interval/assoc 5
-                                 10
-                                 :y))]
+                 (interval/mark 5
+                                10
+                                :x)
+                 (interval/mark 5
+                                10
+                                :y))]
 
     (t/is (= (sorted-map [5 10]
                          #{:x
@@ -160,17 +160,17 @@
 
 
 
-(t/deftest assoc-start
+(t/deftest mark-start
 
   ;; X STARTS Y and vice-versa, in various flavors
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 5
-                                 8
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 5
+                                8
+                                :x))]
 
     (t/is (= (sorted-map [5 8]  #{:x
                                   :y}
@@ -202,12 +202,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 nil
-                                 :y)
-                 (interval/assoc 5
-                                 10
-                                 :x))]
+                 (interval/mark 5
+                                nil
+                                :y)
+                 (interval/mark 5
+                                10
+                                :x))]
 
     (t/is (= (sorted-map [5 10]   #{:x
                                     :y}
@@ -233,12 +233,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 5
-                                 15
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 5
+                                15
+                                :x))]
 
     (t/is (= (sorted-map [5 10]  #{:x
                                    :y}
@@ -270,12 +270,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 5
-                                 nil
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 5
+                                nil
+                                :x))]
 
     (t/is (= (sorted-map [5 10]   #{:y
                                     :x}
@@ -301,20 +301,20 @@
 
 
 
-(t/deftest assoc-finish
+(t/deftest mark-finish
 
 
   ;; X FINISHES Y and vice-versa, in various flavors
 
-  ;; Should be fine since associng is indeed associative.
+  ;; Should be fine since marking is associative.
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 8
-                                 10
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 8
+                                10
+                                :x))]
 
     (t/is (= (sorted-map [5 8]  #{:y}
                          [8 10] #{:x
@@ -346,12 +346,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 2
-                                 10
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 2
+                                10
+                                :x))]
 
     (t/is (= (sorted-map [2 5]  #{:x}
                          [5 10] #{:x
@@ -383,12 +383,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc nil
-                                 10
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark nil
+                                10
+                                :x))]
 
     (t/is (= (sorted-map [nil 5] #{:x}
                          [5 10]  #{:y
@@ -419,17 +419,17 @@
 
 
 
-(t/deftest assoc-during
+(t/deftest mark-during
 
   ;; X during Y and vice versa
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 2
-                                 12
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 2
+                                12
+                                :x))]
 
     (t/is (= (sorted-map [2 5]   #{:x}
                          [5 10]  #{:y
@@ -468,12 +468,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 6
-                                 8
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 6
+                                8
+                                :x))]
 
     (t/is (= (sorted-map [5 6]  #{:y}
                          [6 8]  #{:y
@@ -512,17 +512,17 @@
 
 
 
-(t/deftest assoc-overlap
+(t/deftest mark-overlap
 
   ;; X OVERLAPS Y and vice-versa
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 2
-                                 7
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 2
+                                7
+                                :x))]
 
     (t/is (= (sorted-map [2 5]  #{:x}
                          [5 7]  #{:x
@@ -561,12 +561,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc nil
-                                 7
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark nil
+                                7
+                                :x))]
 
     (t/is (= (sorted-map [nil 5]  #{:x}
                          [5 7]    #{:y
@@ -604,12 +604,12 @@
 
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :y)
-                 (interval/assoc 8
-                                 15
-                                 :x))]
+                 (interval/mark 5
+                                10
+                                :y)
+                 (interval/mark 8
+                                15
+                                :x))]
 
     (t/is (= (sorted-map [5 8]   #{:y}
                          [8 10]  #{:y
@@ -648,23 +648,23 @@
 
 
 
-(t/deftest assoc-segments
+(t/deftest mark-segments
 
-  ;; Updating several segments during one assoc
+  ;; Updating several segments during one mark
 
   (let [tree (-> (interval/tree)
-                 (interval/assoc 5
-                                 10
-                                 :a)
-                 (interval/assoc 10
-                                 15
-                                 :b)
-                 (interval/assoc 20
-                                 30
-                                 :c)
-                 (interval/assoc 5
-                                 35
-                                 :d))]
+                 (interval/mark 5
+                                10
+                                :a)
+                 (interval/mark 10
+                                15
+                                :b)
+                 (interval/mark 20
+                                30
+                                :c)
+                 (interval/mark 5
+                                35
+                                :d))]
 
     (t/is (= (sorted-map [5 10]  #{:a
                                    :d}
