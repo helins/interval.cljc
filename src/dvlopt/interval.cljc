@@ -19,8 +19,10 @@
 
 ;;;;;;;;;; Private
 
+  ;; TODO. Make private
 
-(defn- -segments
+(defn -segments
+
 
   ""
 
@@ -43,28 +45,30 @@
 
 
 
-(defn- -split-at
+(defn -split-at
 
   ""
 
   ([tree x]
 
    (if x
-     (let [[[start
-             end
-             :as k] vs] (find tree
-                              [x x])]
+     (if-some [[[start
+                 end
+                 :as interval]
+                vs]            (find tree
+                                     [x x])]
        (if (or (= start
                   x)
                (= end
                   x))
          tree
          (-> tree
-             (clj/dissoc k)
+             (clj/dissoc interval)
              (clj/assoc [start x]
                         vs
                         [x end]
-                        vs))))
+                        vs)))
+       tree)
      tree))
 
 
@@ -78,24 +82,162 @@
 ;;;;;;;;;; Public API
 
 
+(defn- -point<-
+
+  ;; Handles nil as infinity.
+
+  [a b]
+
+  (or (nil? a)
+      (and (some? b)
+           (< a
+              b))))
+
+
+
+(defn- -point<+
+
+  ;; Handles nil as infinity.
+
+  [a b]
+
+  (or (nil? b)
+      (and (some? a)
+           (< a
+              b))))
+
+
+
+(defn- -assoc-segments
+
+  ;;
+
+  [value from-2 to tree [[[from-seg
+                           to-seg
+                           :as segment]
+                          values]
+                         & segments]]
+  (if segment
+    (cond
+      (= to
+         to-seg)        (clj/assoc tree
+                                   segment
+                                   (conj values
+                                         value))
+      (-point<+ to
+                to-seg) (-> tree
+                            (clj/dissoc segment)
+                            (clj/assoc [from-seg to] (conj values
+                                                           value)
+                                       [to to-seg]   values))
+      :else             (recur value
+                               to-seg
+                               to
+                               (clj/assoc tree
+                                          segment
+                                          (conj values
+                                                value))
+                               segments))
+    (clj/assoc tree
+               [from-2 to]
+               #{value})))
+
+
+
 (defn assoc
 
   ""
 
-  [tree from to v]
+  [tree from to value]
 
-  (let [tree-2 (-split-at tree
-                          from
-                          to)]
-    (reduce (fn add [tree-3 [interval values]]
-              (clj/assoc tree-3
-                         interval
-                         (conj values
-                               v)))
-            tree-2
-            (-segments tree-2
-                       from
-                       to))))
+  (let [[[[from-seg
+           to-seg
+           :as segment]
+          values] 
+         & segments]    (subseq tree
+                                >=
+                                [from from])]
+    (println :associng from to value :segment segment :tree tree)
+    (if (or (nil? segment)
+            (and (some? from-seg)
+                 (some? to)
+                 (<= to
+                     from-seg)))
+      (clj/assoc tree
+                 [from to]
+                 #{value})
+      (cond
+        (= from
+           from-seg)        (cond
+                              (= to
+                                 to-seg)        (clj/assoc tree
+                                                           segment
+                                                           (conj values
+                                                                 value))
+                              (-point<+ to
+                                        to-seg) (-> tree
+                                                    (clj/dissoc segment)
+                                                    (clj/assoc [from to]   (conj values
+                                                                                 value)
+                                                               [to to-seg] values))
+                              :else
+                              (-assoc-segments value
+                                               to-seg
+                                               to
+                                               (clj/assoc tree
+                                                          segment
+                                                          (conj values
+                                                                value))
+                                               segments))
+        (-point<- from       
+                  from-seg) (let [tree-2 (-> tree
+                                             (clj/dissoc segment)
+                                             (clj/assoc [from from-seg]
+                                                        #{value}))]
+                              (cond
+                                (= to
+                                   to-seg)        (clj/assoc tree-2
+                                                             segment
+                                                             (conj values
+                                                                   value))
+                                (-point<+ to
+                                          to-seg) (clj/assoc tree-2
+                                                             [from-seg to] (conj values
+                                                                                 value)
+                                                             [to to-seg]   values)
+                                :else
+                                (-assoc-segments value
+                                                 to-seg
+                                                 to
+                                                 (clj/assoc tree-2
+                                                            segment
+                                                            (conj values
+                                                                  value))
+                                                 segments)))
+        :else              (let [tree-2 (-> tree
+                                            (clj/dissoc segment)
+                                            (clj/assoc [from-seg from]
+                                                       values))]
+                             (cond
+                               (= to
+                                  to-seg)        (clj/assoc tree-2
+                                                            [from to]
+                                                            (conj values
+                                                                  value))
+                               (-point<+ to
+                                         to-seg) (clj/assoc tree-2
+                                                            [from to]   (conj values
+                                                                              value)
+                                                            [to to-seg] values)
+                               :else
+                               (-assoc-segments value
+                                                to-seg
+                                                to
+                                                (clj/assoc tree-2
+                                                           [from to-seg]
+                                                           (conj values
+                                                                 value))
+                                                segments)))))))
 
 
 
@@ -171,6 +313,6 @@
 
   []
 
-  (sorted-map-by interval<
-                 [nil nil]
-                 #{}))
+  (sorted-map-by interval<))
+                 ;;[nil nil]
+                 ;;#{}))
