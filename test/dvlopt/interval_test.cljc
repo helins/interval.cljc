@@ -951,6 +951,7 @@
                                         :d}
                               [10 15] #{:b
                                         :d}
+                              [15 20] #{:d}
                               [20 30] #{:c
                                         :d}
                               [30 35] #{:d}))
@@ -974,11 +975,13 @@
              (get tree
                   14)))
 
-    (t/is (nil? (get tree
-                     15)))
+    (t/is (= #{:d}
+             (get tree
+                  15)))
 
-    (t/is (nil? (get tree
-                     19)))
+    (t/is (= #{:d}
+             (get tree
+                  19)))
 
 
     (t/is (= #{:c
@@ -1002,6 +1005,7 @@
 
     (t/is (= [[[10 15] #{:b
                          :d}]
+              [[15 20] #{:d}]
               [[20 30] #{:c
                          :d}]]
              (subseq tree
@@ -1017,6 +1021,7 @@
 
     (t/is (= [[[20 30] #{:c
                          :d}]
+              [[15 20] #{:d}]
               [[10 15] #{:b
                          :d}]]
              (rsubseq tree
@@ -1090,6 +1095,27 @@
                                   32
                                   :d)))
           "Erasing middle of values accross several segments, leaving other values intact")))
+
+
+
+(t/deftest mark-sparse-segments
+
+  (t/is (= (seq (sorted-map [0 5]   #{:a
+                                      :c}
+                            [5 30]  #{:c}
+                            [30 35] #{:b
+                                      :c}))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :a)
+                    (interval/mark 30
+                                   35
+                                   :b)
+                    (interval/mark 0
+                                   35
+                                   :c))))
+        "New segments are created between existing ones"))
 
 
 

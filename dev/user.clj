@@ -25,11 +25,5 @@
 
 (comment
 
-  (-> (interval/tree)
-      (interval/mark 10 15 :a)
-      (interval/mark 30 35 :b)
-      (interval/mark 10 35 :c))
-
-
 
   )
