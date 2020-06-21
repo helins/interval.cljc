@@ -13,8 +13,7 @@
   ;; <!> Attention, highly confusing when not kept in mind <!>
   ;;
   (:refer-clojure :exclude [assoc
-                            dissoc
-                            get]))
+                            dissoc]))
 
 
 ;;;;;;;;;; Private
@@ -177,7 +176,7 @@
           values] 
          & segments]    (subseq tree
                                 >=
-                                [from from])]
+                                from)]
     (if (or (nil? segment)
             (and (some? from-seg)
                  (some? to)
@@ -286,25 +285,18 @@
 
 
 
-(defn get
+(defn union
 
   ""
 
-  ([tree x]
+  [segments]
 
-   (clj/get tree
-            [x x]))
+  (reduce (fn dedup-values [values [_segment values-segment]]
+            (clj.set/union values
+                           values-segment))
+          #{}
+          segments))
 
-
-  ([tree from to]
-
-   (reduce (fn dedup-values [result [_ vs]]
-             (clj.set/union result
-                            vs))
-           #{}
-           (-segments tree
-                      from
-                      to))))
 
 
 ;;;;;;;;;; Creating an interval tree
@@ -314,16 +306,29 @@
 
   ""
 
-  [[start-a end-a] [start-b _]]
+  [a b]
 
-  (boolean (and end-a
-                start-b
-                (if (= start-a
-                       end-a)
-                  (< end-a
-                     start-b)
-                  (<= end-a
-                      start-b)))))
+  (if (nil? a)
+    true
+    (if (nil? b)
+      false
+      (if (number? a)
+        (if (number? b)
+          (< a
+             b)
+          (if-some [b-2 (first b)]
+            (< a
+               b-2)
+            false))
+        (if-some [a-2 (second a)]
+          (if (number? b)
+            (<= a-2
+                b)
+            (if-some [b-2 (first b)]
+              (<= a-2
+                  b-2)
+              false))
+          false)))))
 
 
 
@@ -334,5 +339,3 @@
   []
 
   (sorted-map-by interval<))
-                 ;;[nil nil]
-                 ;;#{}))

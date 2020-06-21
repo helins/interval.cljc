@@ -8,11 +8,7 @@
 
   (:require [clojure.core    :as clj]
             [clojure.test    :as t]
-            [dvlopt.interval :as interval])
-  ;;
-  ;; <!> Attention, highly confusing when not kept in mind <!>
-  ;;
-  (:refer-clojure :exclude [assoc]))
+            [dvlopt.interval :as interval]))
 
 
 ;;;;;;;;;;
@@ -33,14 +29,14 @@
           "Empty tree, 1 segment is created representing the first interval")
 
     (t/is (= #{:x}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9))
+             (get tree
+                  5)
+             (get tree
+                  9))
           "X is retrieved within interval")
 
-    (t/is (nil? (interval/get tree
-                              10))
+    (t/is (nil? (get tree
+                     10))
           "Interval end is exclusive")))
 
 
@@ -62,29 +58,29 @@
              tree)
           "X < Y, 2 separate segments are created")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           8)))
+             (get tree
+                  5)
+             (get tree
+                  8)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           30)
-             (interval/get tree
-                           34)))
+             (get tree
+                  30)
+             (get tree
+                  34)))
 
-    (t/is (nil? (interval/get tree
-                              35)))
+    (t/is (nil? (get tree
+                     35)))
 
-    (t/is (nil? (interval/get tree
-                              40)))))
+    (t/is (nil? (get tree
+                     40)))))
 
 
 
@@ -105,26 +101,26 @@
              tree)
           "X MEETS Y, 2 separate segments are created as the end of an interval is exclusive")
 
-    (t/is (nil? (interval/get tree
-                              -1)))
+    (t/is (nil? (get tree
+                     -1)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           0)
-             (interval/get tree
-                           4)))
+             (get tree
+                  0)
+             (get tree
+                  4)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
-    (t/is (nil? (interval/get tree
-                              15)))))
+    (t/is (nil? (get tree
+                     15)))))
 
 
 
@@ -146,21 +142,21 @@
              tree)
           "X = Y, 1 segment is created and updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
-    (t/is (nil? (interval/get tree
-                              15)))))
+    (t/is (nil? (get tree
+                     15)))))
 
 
 
@@ -182,27 +178,27 @@
              tree)
           "X STARTS Y, existing segment is split in 2, left subsegment updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           7)))
+             (get tree
+                  5)
+             (get tree
+                  7)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           8)
-             (interval/get tree
-                           9)))
+             (get tree
+                  8)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
-    (t/is (nil? (interval/get tree
-                              15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -219,21 +215,21 @@
              tree)
           "X STARTS Y which is half-open at the end, existing segment is split in 2, left subsegment updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           15))))
+             (get tree
+                  10)
+             (get tree
+                  15))))
 
 
   (let [tree (-> (interval/tree)
@@ -250,27 +246,27 @@
              tree)
           "Y STARTS X, existing segment updated, 1 created beyond for X")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
     
     (t/is (= #{:x}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           14)))
+             (get tree
+                  10)
+             (get tree
+                  14)))
 
-    (t/is (nil? (interval/get tree
-                              15)))
+    (t/is (nil? (get tree
+                     15)))
 
-    (t/is (nil? (interval/get tree
-                              20))))
+    (t/is (nil? (get tree
+                     20))))
 
 
   (let [tree (-> (interval/tree)
@@ -287,21 +283,21 @@
              tree)
         "Y STARTS X which is half-open at the end, existing segment updated, 1 created beyond for X")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           1000)))))
+             (get tree
+                  10)
+             (get tree
+                  1000)))))
 
 
 
@@ -326,27 +322,27 @@
              tree)
           "X FINISHES Y, existing segment split in 2, right subsegment updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           7)))
+             (get tree
+                  5)
+             (get tree
+                  7)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           8)
-             (interval/get tree
-                           9)))
+             (get tree
+                  8)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
     
-    (t/is (nil? (interval/get tree
-                              15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -363,27 +359,27 @@
              tree)
           "Y FINISHES X, existing segment updated, 1 created before for X")
 
-    (t/is (nil? (interval/get tree
-                              1)))
+    (t/is (nil? (get tree
+                     1)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           2)
-             (interval/get tree
-                           4)))
+             (get tree
+                  2)
+             (get tree
+                  4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
-    (t/is (nil? (interval/get tree
-                              15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -401,25 +397,25 @@
           "Y FINISHES X which is half-open at start, existing segment updated, 1 created before for X")
 
     (t/is (= #{:x}
-             (interval/get tree
-                           -10)
-             (interval/get tree
-                           0)
-             (interval/get tree
-                           4)))
+             (get tree
+                  -10)
+             (get tree
+                  0)
+             (get tree
+                  4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
     
-    (t/is (nil? (interval/get tree
-                              15)))))
+    (t/is (nil? (get tree
+                     15)))))
 
 
 
@@ -442,32 +438,33 @@
              tree)
           "Y DURING X, existing segment update, 1 created before for X, 1 beyond for X")
 
-    (t/is (nil? (interval/get tree
-                              1)))
+    (t/is (nil? (get tree
+                     1)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           2)
-             (interval/get tree
-                           4)))
+             (get tree
+                  2)
+             (get tree
+                  4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           11)))
+             (get tree
+                  10)
+             (get tree
+                  11)))
 
-    (t/is (nil? (interval/get tree
-                              12)))
+    (t/is (nil? (get tree
+                     12)))
     
-    (t/is (nil? (interval/get tree 15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -485,33 +482,33 @@
              tree)
           "X DURING Y, existing segment split in 3, middle subsegment updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           5.5)))
+             (get tree
+                  5)
+             (get tree
+                  5.5)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           6)
-             (interval/get tree
-                           7)))
+             (get tree
+                  6)
+             (get tree
+                  7)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           8)
-             (interval/get tree
-                           9)))
+             (get tree
+                  8)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
     
-    (t/is (nil? (interval/get tree
-                              15)))))
+    (t/is (nil? (get tree
+                     15)))))
 
 
 
@@ -534,33 +531,33 @@
              tree)
           "X OVERLAPS Y, existing segment split in 2, left subsegment udpated, 1 segment created before for X")
 
-    (t/is (nil? (interval/get tree
-                              1)))
+    (t/is (nil? (get tree
+                     1)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           2)
-             (interval/get tree
-                           4)))
+             (get tree
+                  2)
+             (get tree
+                  4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           6)))
+             (get tree
+                  5)
+             (get tree
+                  6)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           7)
-             (interval/get tree
-                           9)))
+             (get tree
+                  7)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
 
-    (t/is (nil? (interval/get tree
-                              15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -579,31 +576,31 @@
           "X OVERLAPS y and is half-open at start, existing segment split in 2, left one updated, 1 segment created before for X")
 
     (t/is (= #{:x}
-             (interval/get tree
-                           -1)
-             (interval/get tree
-                           0)
-             (interval/get tree
-                           4)))
+             (get tree
+                  -1)
+             (get tree
+                  0)
+             (get tree
+                  4)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           6)))
+             (get tree
+                  5)
+             (get tree
+                  6)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           7)
-             (interval/get tree
-                           9)))
+             (get tree
+                  7)
+             (get tree
+                  9)))
 
-    (t/is (nil? (interval/get tree
-                              10)))
+    (t/is (nil? (get tree
+                     10)))
     
-    (t/is (nil? (interval/get tree
-                              15))))
+    (t/is (nil? (get tree
+                     15))))
 
 
   (let [tree (-> (interval/tree)
@@ -621,33 +618,33 @@
              tree)
           "Y OVERLAPS X, existing segment split in 2, right subsegment updated, 1 segment created beyond for X")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:y}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           7)))
+             (get tree
+                  5)
+             (get tree
+                  7)))
 
     (t/is (= #{:x
                :y}
-             (interval/get tree
-                           8)
-             (interval/get tree
-                           9)))
+             (get tree
+                  8)
+             (get tree
+                  9)))
 
     (t/is (= #{:x}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           14)))
+             (get tree
+                  10)
+             (get tree
+                  14)))
 
-    (t/is (nil? (interval/get tree
-                              15)))
+    (t/is (nil? (get tree
+                     15)))
 
-    (t/is (nil? (interval/get tree
-                              20)))))
+    (t/is (nil? (get tree
+                     20)))))
 
 
 
@@ -679,45 +676,45 @@
              tree)
           "X spans several segments, all are updated")
 
-    (t/is (nil? (interval/get tree
-                              4)))
+    (t/is (nil? (get tree
+                     4)))
 
     (t/is (= #{:a
                :d}
-             (interval/get tree
-                           5)
-             (interval/get tree
-                           9)))
+             (get tree
+                  5)
+             (get tree
+                  9)))
 
     (t/is (= #{:b
                :d}
-             (interval/get tree
-                           10)
-             (interval/get tree
-                           14)))
+             (get tree
+                  10)
+             (get tree
+                  14)))
 
-    (t/is (nil? (interval/get tree
-                              15)))
+    (t/is (nil? (get tree
+                     15)))
 
-    (t/is (nil? (interval/get tree
-                              19)))
+    (t/is (nil? (get tree
+                     19)))
 
 
     (t/is (= #{:c
                :d}
-             (interval/get tree
-                           20)
-             (interval/get tree
-                           29)))
+             (get tree
+                  20)
+             (get tree
+                  29)))
 
     (t/is (= #{:d}
-             (interval/get tree
-                           30)
-             (interval/get tree
-                           34)))
+             (get tree
+                  30)
+             (get tree
+                  34)))
 
-    (t/is (nil? (interval/get tree
-                              35)))
+    (t/is (nil? (get tree
+                     35)))
     
-    (t/is (nil? (interval/get tree
-                              50)))))
+    (t/is (nil? (get tree
+                     50)))))
