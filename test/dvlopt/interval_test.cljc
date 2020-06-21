@@ -717,4 +717,121 @@
                      35)))
     
     (t/is (nil? (get tree
-                     50)))))
+                     50)))
+
+    (t/is (= [[[10 15] #{:b
+                         :d}]
+              [[20 30] #{:c
+                         :d}]]
+             (subseq tree
+                     >= 10
+                     <  30)
+             (subseq tree
+                     >= 12
+                     <= 25)
+             (subseq tree
+                     > 9
+                     < 30))
+          "Querying segments in ways that should be equivalent given the state of the tree")
+
+    (t/is (= [[[20 30] #{:c
+                         :d}]
+              [[10 15] #{:b
+                         :d}]]
+             (rsubseq tree
+                      >= 10
+                      <  30)
+             (rsubseq tree
+                      >= 12
+                      <= 25))
+          "Reverse segment querying")
+
+    (t/is (= (seq tree)
+             (subseq tree
+                     >= nil)
+             (subseq tree
+                     > nil))
+          "Querying segments starting at nil")
+
+    (t/is (= (reverse (seq tree))
+             (rsubseq tree
+                      >= nil)
+             (rsubseq tree
+                      > nil))
+          "Reverse segment querying starting at nil")
+
+    (t/is (= [[[20 30] #{:c
+                         :d}]
+              [[30 35] #{:d}]]
+             (subseq tree
+                     >= 20)
+             (subseq tree
+                     >= 25)
+             (subseq tree
+                     > 19))
+          "Querying segments after a given point")))
+
+
+
+(t/deftest union
+
+  (let [tree (-> (interval/tree)
+                 (interval/mark 0
+                                15
+                                :a)
+                 (interval/mark 12
+                                nil
+                                :b)
+                 (interval/mark 20
+                                25
+                                :c)
+                 (interval/mark 30
+                                nil
+                                :d)
+                 (interval/mark 35
+                                40
+                                :e)
+                 (interval/mark nil
+                                0
+                                :f))]
+
+    (t/is (= #{:b
+               :d
+               :e}
+             (interval/union (subseq tree
+                                     >= 26))
+             (interval/union (subseq tree
+                                     >= 26
+                                     <  45))
+             (interval/union (subseq tree
+                                     >= 26
+                                     <= 35)))
+          "Equivalent unions given current state of tree")
+
+    (t/is (= #{:b
+               :d
+               :e}
+             (interval/union (rsubseq tree
+                                      >= 26))
+             (interval/union (rsubseq tree
+                                      >= 26
+                                      <  45))
+             (interval/union (rsubseq tree
+                                      >= 26
+                                      <= 35)))
+          "Using reverse segment querying does not change anything")
+
+    (t/is (= #{:b
+               :d}
+             (interval/union (subseq tree
+                                     >= 1000000))
+             (interval/union (rsubseq tree
+                                      >= 1000000)))
+          "Union of values at intervals with half-open ends")
+
+    (t/is (= #{:f}
+             (interval/union (subseq tree
+                                     < 0))
+             (interval/union (rsubseq tree
+                                      < 0)))
+          "Union of values at intervals with half-open starts")))
