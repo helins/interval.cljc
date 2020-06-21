@@ -3,7 +3,7 @@
   ""
 
   ;; Cf. http://clj-me.cgrand.net/2012/03/16/a-poor-mans-interval-tree/
-  ;;     https://github.com/Deep-Symmetry/beat-link-trigger/blob/master/src/beat_link_trigger/util.clj#L412
+  ;;     https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
 
   {:author "Adam Helinski"}
 
@@ -148,6 +148,27 @@
 
   ""
 
+  ;; Following Allen's interval algebra, the first `if` tests the following relations:
+  ;;
+  ;;   X < Y
+  ;;   X > Y
+  ;;   X MEETS Y
+  ;;   Y MEETS X
+  ;;
+  ;; The 3x3 `cond` forms test (in order):
+  ;;
+  ;;   X = Y
+  ;;   X STARTS Y
+  ;;   Y STARTS X
+  ;;  
+  ;;   Y FINISHES X
+  ;;   X OVERLAPS Y
+  ;;   Y DURING X
+  ;;  
+  ;;   X FINISHES Y
+  ;;   X DURING Y
+  ;;   Y OVERLAPS X
+
   [tree from to value]
 
   (let [[[[from-seg
@@ -157,7 +178,6 @@
          & segments]    (subseq tree
                                 >=
                                 [from from])]
-    (println :associng from to value :segment segment :tree tree)
     (if (or (nil? segment)
             (and (some? from-seg)
                  (some? to)
