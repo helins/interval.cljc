@@ -23,9 +23,9 @@
                             10
                             :x)]
 
-    (t/is (= (sorted-map [5 10]
-                         #{:x})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]
+                              #{:x}))
+             (seq tree))
           "Empty tree, 1 segment is created representing the first interval")
 
     (t/is (= #{:x}
@@ -37,7 +37,118 @@
 
     (t/is (nil? (get tree
                      10))
-          "Interval end is exclusive")))
+          "Interval end is exclusive")
+
+    (t/is (empty? (interval/erase tree
+                                  5
+                                  10
+                                  :x))
+          "Erasing a whole segment")
+
+    (t/is (= (seq tree)
+             (seq (interval/erase tree
+                                  5
+                                  10
+                                  :y)))
+          "Segment is left intact if it does not contain the target value")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 5
+                                 7
+                                 :x))
+             (seq (interval/erase tree
+                                  7
+                                  10
+                                  :x)))
+          "FINISH erasing")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 7
+                                 10
+                                 :x))
+             (seq (interval/erase tree
+                                  5
+                                  7
+                                  :x)))
+          "START erasing")
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     6
+                                     :x)
+                      (interval/mark 9
+                                     10
+                                     :x)))
+             (seq (interval/erase tree
+                                  6
+                                  9
+                                  :x)))
+          "DURING erasing")
+
+    (t/is (= (seq tree)
+             (seq (interval/erase tree
+                                  0
+                                  3
+                                  :x)))
+          "< erasing")
+
+    (t/is (= (seq tree)
+             (seq (interval/erase tree
+                                  10
+                                  15
+                                  :x)))
+          "> erasing")
+
+    (t/is (= (seq tree)
+             (seq (interval/erase tree
+                                  0
+                                  5
+                                  :x)))
+          "MEET erasing")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 7
+                                 10
+                                 :x))
+             (seq (interval/erase tree
+                                  0
+                                  7
+                                  :x)))
+          "OVERLAP erasing")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 7
+                                 10
+                                 :x))
+             (seq (interval/erase tree
+                                  nil
+                                  7
+                                  :x)))
+          "OVERLAP erasing (half-open)")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 5
+                                 7
+                                 :x))
+             (seq (interval/erase tree
+                                  7
+                                  15
+                                  :x)))
+          "INV OVERLAP erasing")
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                  5
+                                  7
+                                  :x))
+             (seq (interval/erase tree
+                                  7
+                                  nil
+                                  :x)))
+          "INV OVERLAP erasing (half-open)")))
+
+
+;; TODO. Open intervals
+
 
 
 
@@ -53,9 +164,9 @@
                                 35
                                 :y))]
 
-    (t/is (= (sorted-map [5 10]  #{:x}
-                         [30 35] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]  #{:x}
+                              [30 35] #{:y}))
+             (seq tree))
           "X < Y, 2 separate segments are created")
 
     (t/is (nil? (get tree
@@ -80,7 +191,20 @@
                      35)))
 
     (t/is (nil? (get tree
-                     40)))))
+                     40)))
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     8
+                                     :x)
+                      (interval/mark 30
+                                     35
+                                     :y)))
+             (seq (interval/erase tree
+                                  8
+                                  33
+                                  :x)))
+          "Erasing X across disjoint segments, non-containing segments left intact")))
 
 
 
@@ -96,9 +220,9 @@
                                 10
                                 :y))]
 
-    (t/is (= (sorted-map [0 5]  #{:x}
-                         [5 10] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [0 5]  #{:x}
+                              [5 10] #{:y}))
+             (seq tree))
           "X MEETS Y, 2 separate segments are created as the end of an interval is exclusive")
 
     (t/is (nil? (get tree
@@ -120,7 +244,20 @@
                      10)))
 
     (t/is (nil? (get tree
-                     15)))))
+                     15)))
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 0
+                                     3
+                                     :x)
+                      (interval/mark 5
+                                     10
+                                     :y)))
+             (seq (interval/erase tree
+                                  3
+                                  8
+                                  :x)))
+          "Erasing X across contiguous segments, non-containing segments left intact")))
 
 
 
@@ -156,7 +293,54 @@
                      10)))
 
     (t/is (nil? (get tree
-                     15)))))
+                     15)))
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 5
+                                 10
+                                 :y))
+             (seq (interval/erase tree
+                                  5
+                                  10
+                                  :x))
+             (seq (interval/erase tree
+                                  0
+                                  10
+                                  :x))
+             (seq (interval/erase tree
+                                  nil
+                                  10
+                                  :x))
+             (seq (interval/erase tree
+                                  nil
+                                  15
+                                  :x))
+             (seq (interval/erase tree
+                                  nil
+                                  nil
+                                  :x)))
+          "Completing erasing a value from a segment, other values remains")
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     7
+                                     :x)
+                      (interval/mark 5
+                                     10
+                                     :y)))
+             (seq (interval/erase tree
+                                  7
+                                  10
+                                  :x))
+             (seq (interval/erase tree
+                                  7
+                                  15
+                                  :x))
+             (seq (interval/erase tree
+                                  7
+                                  nil
+                                  :x)))
+          "Partially erasing a value from a segment, other values remains")))
 
 
 
@@ -172,10 +356,10 @@
                                 8
                                 :x))]
 
-    (t/is (= (sorted-map [5 8]  #{:x
-                                  :y}
-                         [8 10] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [5 8]  #{:x
+                                       :y}
+                              [8 10] #{:y}))
+             (seq tree))
           "X STARTS Y, existing segment is split in 2, left subsegment updated")
 
     (t/is (nil? (get tree
@@ -198,7 +382,33 @@
                      10)))
 
     (t/is (nil? (get tree
-                     15))))
+                     15)))
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 5
+                                 8
+                                 :x))
+             (seq (interval/erase tree
+                                  5
+                                  10
+                                  :y))
+             (seq (interval/erase tree
+                                  0
+                                  10
+                                  :y))
+             (seq (interval/erase tree
+                                  nil
+                                  10
+                                  :y))
+             (seq (interval/erase tree
+                                  nil
+                                  15
+                                  :y))
+             (seq (interval/erase tree
+                                  nil
+                                  nil
+                                  :y)))
+          "Erasing value from two adjacent segments, leaving other values intact"))
 
 
   (let [tree (-> (interval/tree)
@@ -209,10 +419,10 @@
                                 10
                                 :x))]
 
-    (t/is (= (sorted-map [5 10]   #{:x
-                                    :y}
-                         [10 nil] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]   #{:x
+                                         :y}
+                              [10 nil] #{:y}))
+             (seq tree))
           "X STARTS Y which is half-open at the end, existing segment is split in 2, left subsegment updated")
 
     (t/is (nil? (get tree
@@ -229,7 +439,36 @@
              (get tree
                   10)
              (get tree
-                  15))))
+                  15)))
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     7
+                                     :y)
+                      (interval/mark 5
+                                     10
+                                     :x)))
+             (seq (interval/erase tree
+                                  7
+                                  nil
+                                  :y)))
+          "Partially erasing to the end value with half-open at the end interval")
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     7
+                                     :y)
+                      (interval/mark 5
+                                     10
+                                     :x)
+                      (interval/mark 100
+                                     nil
+                                     :y)))
+             (seq (interval/erase tree
+                                  7
+                                  100
+                                  :y)))
+          "Partially erasing value with half-open at the end interval"))
 
 
   (let [tree (-> (interval/tree)
@@ -240,10 +479,10 @@
                                 15
                                 :x))]
 
-    (t/is (= (sorted-map [5 10]  #{:x
-                                   :y}
-                         [10 15] #{:x})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]  #{:x
+                                        :y}
+                              [10 15] #{:x}))
+             (seq tree))
           "Y STARTS X, existing segment updated, 1 created beyond for X")
 
     (t/is (nil? (get tree
@@ -266,7 +505,23 @@
                      15)))
 
     (t/is (nil? (get tree
-                     20))))
+                     20)))
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     8
+                                     :x)
+                      (interval/mark 5
+                                     10
+                                     :y)
+                      (interval/mark 12
+                                     15
+                                     :x)))
+             (seq (interval/erase tree
+                                  8
+                                  12
+                                  :x)))
+          "Erasing middle of interval for a value accross segments, other values remain intact"))
 
 
   (let [tree (-> (interval/tree)
@@ -277,10 +532,10 @@
                                 nil
                                 :x))]
 
-    (t/is (= (sorted-map [5 10]   #{:y
-                                    :x}
-                         [10 nil] #{:x})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]   #{:y
+                                         :x}
+                              [10 nil] #{:x}))
+             (seq tree))
         "Y STARTS X which is half-open at the end, existing segment updated, 1 created beyond for X")
 
     (t/is (nil? (get tree
@@ -316,10 +571,10 @@
                                 10
                                 :x))]
 
-    (t/is (= (sorted-map [5 8]  #{:y}
-                         [8 10] #{:x
-                                  :y})
-             tree)
+    (t/is (= (seq (sorted-map [5 8]  #{:y}
+                              [8 10] #{:x
+                                       :y}))
+             (seq tree))
           "X FINISHES Y, existing segment split in 2, right subsegment updated")
 
     (t/is (nil? (get tree
@@ -353,10 +608,10 @@
                                 10
                                 :x))]
 
-    (t/is (= (sorted-map [2 5]  #{:x}
-                         [5 10] #{:x
-                                  :y})
-             tree)
+    (t/is (= (seq (sorted-map [2 5]  #{:x}
+                              [5 10] #{:x
+                                       :y}))
+             (seq tree))
           "Y FINISHES X, existing segment updated, 1 created before for X")
 
     (t/is (nil? (get tree
@@ -390,10 +645,10 @@
                                 10
                                 :x))]
 
-    (t/is (= (sorted-map [nil 5] #{:x}
-                         [5 10]  #{:y
-                                   :x})
-             tree)
+    (t/is (= (seq (sorted-map [nil 5] #{:x}
+                              [5 10]  #{:y
+                                        :x}))
+             (seq tree))
           "Y FINISHES X which is half-open at start, existing segment updated, 1 created before for X")
 
     (t/is (= #{:x}
@@ -431,11 +686,11 @@
                                 12
                                 :x))]
 
-    (t/is (= (sorted-map [2 5]   #{:x}
-                         [5 10]  #{:y
-                                   :x}
-                         [10 12] #{:x})
-             tree)
+    (t/is (= (seq (sorted-map [2 5]   #{:x}
+                              [5 10]  #{:y
+                                        :x}
+                              [10 12] #{:x}))
+             (seq tree))
           "Y DURING X, existing segment update, 1 created before for X, 1 beyond for X")
 
     (t/is (nil? (get tree
@@ -464,7 +719,33 @@
                      12)))
     
     (t/is (nil? (get tree
-                     15))))
+                     15)))
+
+    (t/is (= (seq (interval/mark (interval/tree)
+                                 5
+                                 10
+                                 :y))
+             (seq (interval/erase tree
+                                  2
+                                  12
+                                  :x)))
+          "Removing outer values while inner one remain intact")
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 2
+                                     4
+                                     :x)
+                      (interval/mark 5
+                                     10
+                                     :y)
+                      (interval/mark 11
+                                     12
+                                     :x)))
+             (seq (interval/erase tree
+                                  4
+                                  11
+                                  :x)))
+          "Removing middle of value around an inner value"))
 
 
   (let [tree (-> (interval/tree)
@@ -475,11 +756,11 @@
                                 8
                                 :x))]
 
-    (t/is (= (sorted-map [5 6]  #{:y}
-                         [6 8]  #{:y
-                                  :x}
-                         [8 10] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [5 6]  #{:y}
+                              [6 8]  #{:y
+                                       :x}
+                              [8 10] #{:y}))
+             (seq tree))
           "X DURING Y, existing segment split in 3, middle subsegment updated")
 
     (t/is (nil? (get tree
@@ -524,11 +805,11 @@
                                 7
                                 :x))]
 
-    (t/is (= (sorted-map [2 5]  #{:x}
-                         [5 7]  #{:x
-                                  :y}
-                         [7 10] #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [2 5]  #{:x}
+                              [5 7]  #{:x
+                                       :y}
+                              [7 10] #{:y}))
+             (seq tree))
           "X OVERLAPS Y, existing segment split in 2, left subsegment udpated, 1 segment created before for X")
 
     (t/is (nil? (get tree
@@ -568,11 +849,11 @@
                                 7
                                 :x))]
 
-    (t/is (= (sorted-map [nil 5]  #{:x}
-                         [5 7]    #{:y
-                                    :x}
-                         [7 10]   #{:y})
-             tree)
+    (t/is (= (seq (sorted-map [nil 5] #{:x}
+                              [5 7]   #{:y
+                                        :x}
+                              [7 10]  #{:y}))
+             (seq tree))
           "X OVERLAPS y and is half-open at start, existing segment split in 2, left one updated, 1 segment created before for X")
 
     (t/is (= #{:x}
@@ -611,11 +892,11 @@
                                 15
                                 :x))]
 
-    (t/is (= (sorted-map [5 8]   #{:y}
-                         [8 10]  #{:y
-                                   :x}
-                         [10 15] #{:x})
-             tree)
+    (t/is (= (seq (sorted-map [5 8]   #{:y}
+                              [8 10]  #{:y
+                                        :x}
+                              [10 15] #{:x}))
+             (seq tree))
           "Y OVERLAPS X, existing segment split in 2, right subsegment updated, 1 segment created beyond for X")
 
     (t/is (nil? (get tree
@@ -666,14 +947,14 @@
                                 35
                                 :d))]
 
-    (t/is (= (sorted-map [5 10]  #{:a
-                                   :d}
-                         [10 15] #{:b
-                                   :d}
-                         [20 30] #{:c
-                                   :d}
-                         [30 35] #{:d})
-             tree)
+    (t/is (= (seq (sorted-map [5 10]  #{:a
+                                        :d}
+                              [10 15] #{:b
+                                        :d}
+                              [20 30] #{:c
+                                        :d}
+                              [30 35] #{:d}))
+             (seq tree))
           "X spans several segments, all are updated")
 
     (t/is (nil? (get tree
@@ -769,7 +1050,46 @@
                      >= 25)
              (subseq tree
                      > 19))
-          "Querying segments after a given point")))
+          "Querying segments after a given point")
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     10
+                                     :a)
+                      (interval/mark 10
+                                     15
+                                     :b)
+                      (interval/mark 20
+                                     30
+                                     :c)))
+             (seq (interval/erase tree
+                                  5
+                                  35
+                                  :d)))
+          "Removing values accross several segments, leaving other values intact")
+
+
+    (t/is (= (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     10
+                                     :a)
+                      (interval/mark 5
+                                     9
+                                     :d)
+                      (interval/mark 10
+                                     15
+                                     :b)
+                      (interval/mark 20
+                                     30
+                                     :c)
+                      (interval/mark 32
+                                     35
+                                     :d)))
+             (seq (interval/erase tree
+                                  9
+                                  32
+                                  :d)))
+          "Erasing middle of values accross several segments, leaving other values intact")))
 
 
 
