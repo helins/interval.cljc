@@ -1201,3 +1201,32 @@
                                     10
                                     :y))))
         "Erasing defragments by merging adjacent equal values"))
+
+
+
+(t/deftest mark-defrag
+
+  (let [tree (interval/mark (interval/tree)
+                            5
+                            10
+                            :x)]
+
+    (t/is (= (seq tree)
+             (seq (interval/mark tree
+                                 5
+                                 10
+                                 :x))
+             (seq (interval/mark tree
+                                 5
+                                 8
+                                 :x))
+             (seq (interval/mark tree
+                                 8
+                                 10
+                                 :x))
+             (seq (interval/mark tree
+                                 6
+                                 8
+                                 :x)))
+          "Minimizes fragmenting a single segment")
+    ))

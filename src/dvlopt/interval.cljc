@@ -246,29 +246,8 @@
 
   ""
 
-  ;; Following Allen's interval algebra, the first `if` tests the following relations:
-  ;;
-  ;;   X < Y
-  ;;   X > Y
-  ;;   X MEETS Y
-  ;;   Y MEETS X
-  ;;
-  ;; The 3 `cond` forms with nested `if`s test (in order):
-  ;;
-  ;;   X STARTS Y
-  ;;   X = Y
-  ;;   Y STARTS X
-  ;;  
-  ;;   X OVERLAPS Y
-  ;;   Y FINISHES X
-  ;;   Y DURING X
-  ;;  
-  ;;   X DURING Y
-  ;;   X FINISHES Y
-  ;;   Y OVERLAPS X
-
   ;; A bit fugly and handcrafted, but does the job efficiently as it minimizes looping and hitting
-  ;; the sorted-map.
+  ;; the sorted-map, while preserving from unnecessary fragmentation.
 
   [tree from to value]
 
@@ -283,66 +262,91 @@
     (if (and segment
              (-overlapping? to
                             from-seg))
-      (cond
-        (= from-2
-           from-seg)        (if (-point<+ to
-                                          to-seg)
-                              (-> tree-2
-                                  (dissoc segment)
-                                  (assoc [from-2 to] (conj values
-                                                           value)
-                                         [to to-seg] values))
-                              (let [tree-3 (assoc tree-2
-                                                  segment
-                                                  (conj values
-                                                        value))]
-                                (if (= to
-                                       to-seg)
-                                  tree-3
-                                  (recur to-seg
-                                         segments
-                                         tree-3))))
-        (-point<- from       
-                  from-seg) (let [tree-3 (-> tree-2
-                                             (dissoc segment)
-                                             (assoc [from-2 from-seg]
-                                                    #{value}))]
-                              (if (-point<+ to
+      (if (contains? values
+                     value)
+        (if (-point<- from-2
+                      from-seg)
+          (let [tree-3 (if (= (count values)
+                              1)
+                         (-> tree-2
+                             (dissoc segment)
+                             (assoc [from-2 to-seg]
+                                    values))
+                         (assoc tree-2
+                                [from-2 from-seg]
+                                #{value}))]
+            (if (-point<=+ to
+                           to-seg)
+              tree-3
+              (recur to-seg
+                     segments
+                     tree-3)))
+          (if (-point<=+ to
+                         to-seg)
+            tree-2
+            (recur to-seg
+                   segments
+                   tree-2)))
+        (cond
+          (= from-2
+             from-seg)        (if (-point<+ to
                                             to-seg)
-                                (assoc tree-3
-                                       [from-seg to] (conj values
-                                                           value)
-                                       [to to-seg]   values)
-                                (let [tree-4 (assoc tree-3
+                                (-> tree-2
+                                    (dissoc segment)
+                                    (assoc [from-2 to] (conj values
+                                                             value)
+                                           [to to-seg] values))
+                                (let [tree-3 (assoc tree-2
                                                     segment
                                                     (conj values
                                                           value))]
                                   (if (= to
                                          to-seg)
-                                    tree-4
+                                    tree-3
                                     (recur to-seg
                                            segments
-                                           tree-4)))))
-        :else              (let [tree-3 (-> tree-2
-                                            (dissoc segment)
-                                            (assoc [from-seg from-2]
-                                                   values))]
-                             (if (-point<+ to
+                                           tree-3))))
+          (-point<- from-2       
+                    from-seg) (let [tree-3 (-> tree-2
+                                               (dissoc segment)
+                                               (assoc [from-2 from-seg]
+                                                      #{value}))]
+                                (if (-point<+ to
+                                              to-seg)
+                                  (assoc tree-3
+                                         [from-seg to] (conj values
+                                                             value)
+                                         [to to-seg]   values)
+                                  (let [tree-4 (assoc tree-3
+                                                      segment
+                                                      (conj values
+                                                            value))]
+                                    (if (= to
                                            to-seg)
-                               (assoc tree-3
-                                      [from-2 to] (conj values
-                                                        value)
-                                      [to to-seg] values)
-                               (let [tree-4 (assoc tree-3
-                                                   [from-2 to-seg]
-                                                   (conj values
-                                                         value))]
-                                 (if (= to
-                                        to-seg)
-                                   tree-4
-                                   (recur to-seg
-                                          segments
-                                          tree-4))))))
+                                      tree-4
+                                      (recur to-seg
+                                             segments
+                                             tree-4)))))
+          :else               (let [tree-3 (-> tree-2
+                                               (dissoc segment)
+                                               (assoc [from-seg from-2]
+                                                      values))]
+                                (if (-point<+ to
+                                              to-seg)
+                                  (assoc tree-3
+                                         [from-2 to] (conj values
+                                                           value)
+                                         [to to-seg] values)
+                                  (let [tree-4 (assoc tree-3
+                                                      [from-2 to-seg]
+                                                      (conj values
+                                                            value))]
+                                    (if (= to
+                                           to-seg)
+                                      tree-4
+                                      (recur to-seg
+                                             segments
+                                             tree-4)))))))
       (assoc tree-2
              [from-2 to]
              #{value}))))
