@@ -47,7 +47,7 @@
 
 (defn- -erase-value
 
-  ""
+  ;;
 
   [tree segment values value]
 
@@ -56,6 +56,22 @@
     (if (empty? values-2)
       (dissoc tree
               segment)
+      (assoc tree
+             segment
+             values-2))))
+
+
+
+(defn- -restore-values
+
+  ;;
+
+  [tree segment values value]
+
+  (let [values-2 (disj values
+                       value)]
+    (if (empty? values-2)
+      tree
       (assoc tree
              segment
              values-2))))
@@ -133,62 +149,49 @@
                    from-seg)
                 (-point<- from
                           from-seg))
-          (cond
-            (= to
-               to-seg)        (-erase-value tree
-                                            segment
+          (if (-point<+ to
+                        to-seg)
+            (-restore-values (-> tree
+                                 (dissoc segment)
+                                 (assoc [to to-seg]
+                                        values))
+                             [from-seg to]
+                             values
+                             value)
+            (let [tree-2 (-erase-value tree
+                                       segment
+                                       values
+                                       value)]
+              (if (= to
+                     to-seg)
+                tree-2
+                (-erase-segments value
+                                 to
+                                 tree-2
+                                 segments))))
+          (let [tree-2 (-> tree
+                           (dissoc segment)
+                           (assoc [from-seg from]
+                                  values))]
+            (if (-point<+ to
+                          to-seg)
+              (-restore-values (assoc tree-2
+                                      [to to-seg]
+                                      values)
+                               [from to]
+                               values
+                               value)
+              (let [tree-3 (-restore-values tree-2
+                                            [from to-seg]
                                             values
-                                            value)
-
-            (-point<+ to
-                      to-seg) (let [tree-2   (-> tree
-                                                 (dissoc segment)
-                                                 (assoc [to to-seg]
-                                                        values))
-                                    values-2 (disj values
-                                                   value)]
-                                (if (empty? values-2)
-                                  tree-2
-                                  (assoc tree-2
-                                         [from-seg to]
-                                         values-2)))
-            :else             (-erase-segments value
-                                               to
-                                               (-erase-value tree
-                                                             segment
-                                                             values
-                                                             value)
-                                               segments))
-          (let [tree-2   (-> tree
-                             (dissoc segment)
-                             (assoc [from-seg from]
-                                    values))
-                values-2 (disj values
-                               value)]
-            (cond
-              (= to
-                 to-seg)        (if (empty? values-2)
-                                  tree-2
-                                  (assoc tree-2
-                                         [from to]
-                                         values-2))
-              (-point<+ to
-                        to-seg) (let [tree-3 (assoc tree-2
-                                                    [to to-seg]
-                                                    values)]
-                                  (if (empty? values-2)
-                                    tree-3
-                                    (assoc tree-3
-                                           [from to]
-                                           values-2)))
-              :else             (-erase-segments value
-                                                 to
-                                                 (if (empty? values-2)
-                                                   tree-2
-                                                   (assoc tree-2
-                                                          [from to-seg]
-                                                          values-2))
-                                                 segments))))
+                                            value)]
+                (if (= to
+                       to-seg)
+                  tree-3
+                  (-erase-segments value
+                                   to
+                                   tree-3
+                                   segments))))))
         (if (or (= to
                    to-seg)
                 (-point<+ to

@@ -1181,3 +1181,23 @@
              (interval/union (rsubseq tree
                                       < 0)))
           "Union of values at intervals with half-open starts")))
+
+
+
+#_(t/deftest erase-defrag
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               10
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/erase 5
+                                    10
+                                    :y))))
+        "Erasing defragments by merging adjacent equal values"))
