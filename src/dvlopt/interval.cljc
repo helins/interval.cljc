@@ -14,35 +14,16 @@
 ;;;;;;;;;; Private
 
 
-(declare ^:private -point<+)
+(defn- -overlapping?
 
+  ;;
 
-(defn- -point<-
+  [to from]
 
-  ;; Handles nil as infinity.
-
-  [a b]
-
-  (or (nil? a)
-      (and (some? b)
-           (< a
-              b))))
-
-
-
-(defn- -point<+
-
-  ;; Handles nil as infinity.
-
-  [a b]
-
-  (or (nil? b)
-      (and (some? a)
-           (< a
-              b))))
-
-
-;;;;;;;;;; Public API
+  (or (nil? to)
+      (nil? from)
+      (> to
+         from)))
 
 
 (defn- -erase-value
@@ -62,6 +43,64 @@
 
 
 
+(defn- -point<-
+
+  ;; Handles nil as infinity.
+
+  [a b]
+
+  (if (nil? a)
+    (some? b)
+    (and (some? b)
+         (< a
+            b))))
+
+
+
+(defn- -point<=-
+
+  ;;
+
+  [a b]
+
+  (or (= a
+         b)
+      (nil? a)
+      (and (some? b)
+           (<= a
+               b))))
+
+
+
+(defn- -point<+
+
+  ;; Handles nil as infinity.
+
+  [a b]
+
+  (if (nil? b)
+    (some? a)
+    (and (some? a)
+         (< a
+            b))))
+
+
+
+(defn- -point<=+
+
+  ;;
+
+  [a b]
+
+  (or (= a
+         b)
+      (nil? b)
+      (and (some? a)
+           (<= a
+               b))))
+
+
+
 (defn- -restore-values
 
   ;;
@@ -76,6 +115,8 @@
              segment
              values-2))))
 
+
+;;;;;;;;;; Public API
 
 
 (defn- -erase-segments
@@ -137,18 +178,13 @@
           values]
          & segments]    (subseq tree
                                 >= from)]
-    (if (or (nil? segment)
-            (and (some? from-seg)
-                 (some? to)
-                 (<= to
-                     from-seg)))
-      tree
+    (if (and segment
+             (-overlapping? to
+                            from-seg))
       (if (contains? values
                      value)
-        (if (or (= from
-                   from-seg)
-                (-point<- from
-                          from-seg))
+        (if (-point<=- from
+                       from-seg)
           (if (-point<+ to
                         to-seg)
             (-restore-values (-> tree
@@ -192,15 +228,14 @@
                                    to
                                    tree-3
                                    segments))))))
-        (if (or (= to
-                   to-seg)
-                (-point<+ to
-                          to-seg))
+        (if (-point<=+ to
+                       to-seg)
           tree
           (-erase-segments value
                            to
                            tree
-                           segments))))))
+                           segments)))
+      tree)))
 
 
 
@@ -242,14 +277,9 @@
           & segments]    (subseq tree
                                  >= from)
          tree-2          tree]
-    (if (or (nil? segment)
-            (and (some? from-seg)
-                 (some? to)
-                 (<= to
-                     from-seg)))
-      (assoc tree-2
-             [from-2 to]
-             #{value})
+    (if (and segment
+             (-overlapping? to
+                            from-seg))
       (cond
         (= from-2
            from-seg)        (if (-point<+ to
@@ -309,7 +339,10 @@
                                    tree-4
                                    (recur to-seg
                                           segments
-                                          tree-4)))))))))
+                                          tree-4))))))
+      (assoc tree-2
+             [from-2 to]
+             #{value}))))
 
 
 
