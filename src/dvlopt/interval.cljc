@@ -121,7 +121,11 @@
 
 (defn- -erase-segments
 
-  ""
+  ;; Used by [[erase]].
+  ;;
+  ;; Behaves very much like [[erase]] but optimizes the algorithm is not dealing with the first
+  ;; segment anymore. Is pretty much a copy/paste, but the recursion and all the destructuring
+  ;; make it not worth the trouble abstracting that away.
 
   [value to tree [[[from-seg
                     to-seg
@@ -129,39 +133,38 @@
                    values]
                   & segments]]
 
-  (if segment
+  (if (and segment
+           (-overlapping? to
+                          from-seg))
     (if (contains? values
                    value)
-      (cond
-        (= to
-           to-seg)        (-erase-value tree
-                                        segment
-                                        values
-                                        value)
-
-        (-point<+ to
-                  to-seg) (let [tree-2   (-> tree
-                                             (dissoc segment)
-                                             (assoc [to to-seg]
-                                                    values))
-                                values-2 (disj values
-                                               value)]
-                            (if (empty? values-2)
-                              tree-2
-                              (assoc tree-2
-                                     [from-seg to]
-                                     values-2)))
-        :else             (recur value
-                                 to
-                                 (-erase-value tree
-                                               segment
-                                               values
-                                               value)
-                                 segments))
-      (recur value
-             to
-             tree
-             segments))
+      (if (-point<+ to
+                    to-seg)
+        (-restore-values (-> tree
+                             (dissoc segment)
+                             (assoc [to to-seg]
+                                    values))
+                         [from-seg to]
+                         values
+                         value)
+        (let [tree-2 (-erase-value tree
+                                   segment
+                                   values
+                                   value)]
+          (if (= to
+                 to-seg)
+            tree-2
+            (recur value
+                   to
+                   tree-2
+                   segments))))
+      (if (-point<=+ to
+                     to-seg)
+        tree
+        (recur value
+               to
+               tree
+               segments)))
     tree))
 
 
