@@ -15,11 +15,12 @@
 
 (def tree
      (-> (interval/tree)
-         (interval/mark 0 15 :a)
-         (interval/mark 12 nil :b)
-         (interval/mark 20 25 :c)
-         (interval/mark 30 nil :d)
-         (interval/mark 35 40 :e)))
+         (interval/mark 0   15  :a)
+         (interval/mark 12  nil :b)
+         (interval/mark 20  25  :c)
+         (interval/mark 30  nil :d)
+         (interval/mark 35  40  :e)
+         (interval/mark nil 0   :f)))
 
 
 

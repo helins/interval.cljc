@@ -14,6 +14,18 @@
 ;;;;;;;;;; Private
 
 
+(defn- -disjoint?
+
+  ""
+
+  [to from]
+
+  (and (some? to)
+       (some? from)
+       (< to
+          from)))
+
+
 (defn- -overlapping?
 
   ;;
@@ -259,9 +271,13 @@
           & segments]    (subseq tree
                                  >= from)
          tree-2          tree]
-    (if (and segment
-             (-overlapping? to
-                            from-seg))
+    ;(println :segment segment :for from-2 to value (-disjoint? to from-seg))
+    (if (or (nil? segment)
+            (-disjoint? to
+                        from-seg))
+      (assoc tree-2
+             [from-2 to]
+             #{value})
       (if (contains? values
                      value)
         (if (-point<- from-2
@@ -270,8 +286,8 @@
                               1)
                          (-> tree-2
                              (dissoc segment)
-                             (assoc [from-2 to-seg]
-                                    values))
+                              (assoc [from-2 to-seg]
+                                     values))
                          (assoc tree-2
                                 [from-2 from-seg]
                                 #{value}))]
@@ -288,6 +304,11 @@
                    segments
                    tree-2)))
         (cond
+          (= to
+             from-seg)        (assoc tree-2
+                                     [from-2 to]
+                                     #{value})
+
           (= from-2
              from-seg)        (if (-point<+ to
                                             to-seg)
@@ -346,10 +367,7 @@
                                       tree-4
                                       (recur to-seg
                                              segments
-                                             tree-4)))))))
-      (assoc tree-2
-             [from-2 to]
-             #{value}))))
+                                             tree-4))))))))))
 
 
 

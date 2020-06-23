@@ -934,12 +934,12 @@
   ;; Updating several segments during one mark
 
   (let [tree (-> (interval/tree)
-                 (interval/mark 5
-                                10
-                                :a)
                  (interval/mark 10
                                 15
                                 :b)
+                 (interval/mark 5
+                                10
+                                :a)
                  (interval/mark 20
                                 30
                                 :c)
@@ -1228,5 +1228,21 @@
                                  6
                                  8
                                  :x)))
-          "Minimizes fragmenting a single segment")
-    ))
+          "Avoid fragmenting with unnecessary updates to a single segment")
+
+    (t/is (= (seq tree)
+             (seq (-> (interval/tree)
+                      (interval/mark 8
+                                     10
+                                     :x)
+                      (interval/mark 5
+                                     9
+                                     :x)))
+             (seq (-> (interval/tree)
+                      (interval/mark 8
+                                     10
+                                     :x)
+                      (interval/mark 5
+                                     8
+                                     :x))))
+          "Merges meeting segments with identical values")))
