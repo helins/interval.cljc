@@ -1245,4 +1245,72 @@
                       (interval/mark 5
                                      8
                                      :x))))
-          "Merges meeting segments with identical values")))
+          "Both having equal values, merges an overlapping or meeting interval with the existing segment instead of creating a new segment"))
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 0
+                                   10
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   5
+                                   :y))))
+        "Newly met segments with equal values are merged at the end of an interval starting (interval = segment)")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 0
+                                   10
+                                   :y))))
+        "Newly met segments with equal values are merged at the end of an interval starting (interval OVERLAPS segment)")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y))))
+        "Newly met segments with equal values are merged at the end of an interval starting (interval FINISHES segment)")
+
+  )
