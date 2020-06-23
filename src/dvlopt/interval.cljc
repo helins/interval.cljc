@@ -254,26 +254,54 @@
 
 
 
-(defn- -mark-join-pre
 
-  ""
+
+
+
+(defn- -mark-merge-left
+
+  ;; Former `-mark-join-pre`
 
   [tree from to values]
 
-  (let [[[from-prior
-          to-prior
-          :as segment-prior]
-         values-prior]       (first (rsubseq tree
+  (let [[[from-left
+          to-left
+          :as segment-left]
+         values-left]       (first (rsubseq tree
                                              >= nil
                                              <  from))]
-    (if (and values-prior
-             (= to-prior
+    (if (and values-left
+             (= to-left
                 from)
-             (= values-prior
+             (= values-left
                 values))
       (-> tree
-          (dissoc segment-prior)
-          (assoc [from-prior to]
+          (dissoc segment-left)
+          (assoc [from-left to]
+                 values))
+      (assoc tree
+             [from to]
+             values))))
+
+
+(defn- -mark-merge-right
+
+  ;;
+
+  [tree from to values segments]
+
+  (let [[[from-right
+          to-right
+          :as segment-right]
+         values-right]       (first segments)]
+    (if (and values-right
+             (= to
+                from-right)
+             (= values-right
+                values))
+      (-> tree
+          (dissoc segment-right)
+          (assoc [from to-right]
                  values))
       (assoc tree
              [from to]
@@ -281,116 +309,332 @@
 
 
 
-(defn- -mark-join
+(defn- -mark-merge
 
-  ""
+  ;; Former `-mark-join`
 
-  [tree from to values value segments]
+  [tree from to values segments]
 
-  (let [[[from-next
-          to-next
-          :as segment-next]
-         values-next]       (first segments)
-        values-2            (conj values
-                                  value)]
-    (if (and values-next
+  (let [[[from-right
+          to-right
+          :as segment-right]
+         values-right]       (first segments)]
+    (if (and values-right
              (= to
-                from-next)
-             (= values-next
-                values-2))
-      (-mark-join-pre (dissoc tree
-                              segment-next)
-                      from
-                      to-next
-                      values-2)
-      (-mark-join-pre tree
-                      from
-                      to
-                      values-2))))
+                from-right)
+             (= values-right
+                values))
+      (-mark-merge-left (dissoc tree
+                                segment-right)
+                        from
+                        to-right
+                        values)
+      (-mark-merge-left tree
+                        from
+                        to
+                        values))))
 
 
 
-(defn- -mark-segments
 
-  ""
 
-  ;; A bit fugly and handcrafted, but does the job efficiently as it minimizes looping and hitting
-  ;; the sorted-map, while preserving from unnecessary fragmentation.
 
-  [tree from-2 to value [[[from-seg
-                           to-seg
-                           :as segment]
-                          values] 
-                         & segments]]
+(defn- -markloop-merge-left
+
+  ;;
+
+  [tree from-acc to-acc values-acc assoc-acc? from to values]
+
+  (if (and (= to-acc
+              from)
+           (= values-acc
+              values))
+    (let [tree-2 (assoc tree
+                        [from-acc to]
+                        values)]
+      (if assoc-acc?
+        tree-2
+        (dissoc tree-2
+                [from-acc to-acc])))
+    (let [tree-2 (assoc tree
+                        [from to]
+                        values)]
+      (if assoc-acc?
+        (assoc tree-2
+               [from-acc to-acc] values-acc)
+        tree-2))))
+
+
+
+(defn- -markloop-merge-right
+
+  ;;
+
+  [tree from to values segments]
+
+  (let [[[from-right
+          to-right
+          :as segment-right]
+         values-right]       (first segments)]
+    (if (and values-right
+             (= to
+                from-right)
+             (= values-right
+                values))
+      (-> tree
+          (dissoc segment-right)
+          (assoc tree
+                 [from to-right]
+                 values))
+      (assoc tree
+             [from to]
+             values))))
+
+
+(defn- -markloop-merge
+
+  ;;
+
+  [tree from-acc to-acc values-acc assoc-acc? from to values segments]
+
+  (if (and (= to-acc
+              from)
+           (= values-acc
+              values))
+    (-markloop-merge-right (if assoc-acc?
+                             tree
+                             (dissoc tree
+                                     [from-acc to-acc]))
+                           from-acc
+                           to
+                           values
+                           segments)
+    (-markloop-merge-right (if assoc-acc?
+                             (assoc tree
+                                    [from-acc to-acc]
+                                    values-acc)
+                             tree)
+                           from
+                           to
+                           values
+                           segments)))
+
+
+
+(defn- -mark-rest
+
+  ;;
+
+  [tree from-2 to value from-acc to-acc values-acc assoc-acc? [[[from-seg
+                                                                 to-seg
+                                                                 :as segment]
+                                                                values] 
+                                                               & segments]]
 
   (if (or (nil? segment)
           (-disjoint? to
                       from-seg))
-    (assoc tree
-           [from-2 to]
-           #{value})
+    (-markloop-merge-left tree
+                          from-acc
+                          to-acc
+                          values-acc
+                          assoc-acc?
+                          from-2
+                          to
+                          #{value})
     (if (contains? values
                    value)
       (if (-point<- from-2
                     from-seg)
-        (let [tree-2 (if (= (count values)
-                            1)
-                       (-> tree
-                           (dissoc segment)
-                           (assoc [from-2 to-seg]
-                                  values))
-                       (assoc tree
-                              [from-2 from-seg]
-                              #{value}))]
-          (if (-point<=+ to
-                         to-seg)
-            tree-2
-            (recur tree-2
+        (if (-point<=- to
+                       to-seg)
+          (if (= (count values)
+                 1)
+            (-markloop-merge-left (dissoc tree
+                                          segment)
+                                  from-acc
+                                  to-acc
+                                  values-acc
+                                  assoc-acc?
+                                  from-2
+                                  to-seg
+                                  values)
+            (-markloop-merge-left tree
+                                  from-acc
+                                  to-acc
+                                  values-acc
+                                  assoc-acc?
+                                  from-2
+                                  from-seg
+                                  #{value}))
+          (if (= (count values)
+                 1)
+            (if (and (= to-acc
+                        from-2)
+                     (= values-acc
+                        values))
+              (recur (let [tree-2 (dissoc tree
+                                          segment)]
+                       (if assoc-acc?
+                         tree
+                         (dissoc tree
+                                 [from-acc to-acc])))
+                     to-seg
+                     to
+                     value
+                     from-acc
+                     to-seg
+                     values
+                     true
+                     segments)
+              (recur (let [tree-2 (dissoc tree
+                                          segment)]
+                       (if assoc-acc?
+                         (assoc tree-2
+                                [from-acc to-acc]
+                                values-acc)
+                         tree-2))
+                     to-seg
+                     to
+                     value
+                     from-2
+                     to-seg
+                     values
+                     true
+                     segments))
+            (recur (-markloop-merge-left tree
+                                         from-acc
+                                         to-acc
+                                         values-acc
+                                         assoc-acc?
+                                         from-2
+                                         from-seg
+                                         #{value})
                    to-seg
                    to
                    value
+                   from-seg
+                   to-seg
+                   values
+                   false
                    segments)))
         (if (-point<=+ to
                        to-seg)
-          tree
-          (recur tree
-                 to-seg
-                 to
-                 value
-                 segments)))
+          ;; TODO. Might not need to potentially merge left if `assoc-acc?` is true?
+          (-markloop-merge-left tree
+                                from-acc
+                                to-acc
+                                values-acc
+                                assoc-acc?
+                                from-seg
+                                to-seg
+                                values)
+          (if (and (= to-acc
+                      from-2)
+                   (= values-acc
+                      values))
+            (recur (let [tree-2 (dissoc tree
+                                        segment)]
+                     (if assoc-acc?
+                       tree
+                       (dissoc tree
+                               [from-acc to-acc])))
+                   to-seg
+                   to
+                   value
+                   from-acc
+                   to-seg
+                   values
+                   true
+                   segments)
+            (recur (if assoc-acc?
+                     (assoc tree
+                            [from-acc to-acc])
+                     tree)
+                   to-seg
+                   to
+                   value
+                   from-seg
+                   to-seg
+                   values
+                   false
+                   segments))))
       (cond
         (= to
-           from-seg) (assoc tree
-                            [from-2 to]
-                            #{value})
+           from-seg) (-markloop-merge-left tree
+                                           from-acc
+                                           to-acc
+                                           values-acc
+                                           assoc-acc?
+                                           from-2
+                                           to
+                                           #{value})
         (= from-2
            from-seg) (if (-point<+ to
                                    to-seg)
                        (-> tree
                            (dissoc segment)
-                           (assoc [from-2 to] (conj values
-                                                    value)
-                                  [to to-seg] values))
+                           (assoc [to to-seg]
+                                  values)
+                           (-markloop-merge-left from-acc
+                                                 to-acc
+                                                 values-acc
+                                                 assoc-acc?
+                                                 from-2
+                                                 to
+                                                 (conj values
+                                                       value)))
                        (if (= to
                               to-seg)
-                         (-mark-join tree
-                                     from-seg
-                                     to-seg
-                                     values
-                                     value
-                                     segments)
-                         (recur (assoc tree
-                                       segment
-                                       (conj values
-                                             value))
-                                to-seg
-                                to
-                                value
-                                segments)))
+                         (-markloop-merge tree
+                                          from-acc
+                                          to-acc
+                                          values-acc
+                                          assoc-acc?
+                                          from-seg
+                                          to-seg
+                                          (conj values
+                                                value)
+                                          segments)
+                         (let [values-2 (conj values
+                                              value)]
+                           (if (= values-acc
+                                  values-2)
+                             (recur (let [tree-2 (dissoc tree
+                                                         segment)]
+                                      (if assoc-acc?
+                                        tree-2
+                                        (dissoc tree
+                                                [from-acc to-acc])))
+                                    to-seg
+                                    to
+                                    value
+                                    from-acc
+                                    to-seg
+                                    values-2
+                                    true
+                                    segments)
+                             (recur (if assoc-acc?
+                                      (assoc tree
+                                             [from-acc to-acc] values-acc)
+                                      tree)
+                                    to-seg
+                                    to
+                                    value
+                                    from-seg
+                                    to-seg
+                                    values-2
+                                    true
+                                    segments)))))
         :else         (let [tree-2 (-> tree
                                       (dissoc segment)
-                                      (assoc [from-2 from-seg]
-                                             #{value}))]
+                                      (-markloop-merge-left from-acc
+                                                            to-acc
+                                                            values-acc
+                                                            assoc-acc?
+                                                            from-2
+                                                            from-seg
+                                                            #{value}))]
                        (if (-point<+ to
                                      to-seg)
                          (assoc tree-2
@@ -399,25 +643,26 @@
                                 [to to-seg]   values)
                          (if (= to
                                 to-seg)
-                           (-mark-join tree-2
-                                       from-seg
-                                       to-seg
-                                       values
-                                       value
-                                       segments)
-                           (recur (assoc tree-2
-                                         segment
-                                         (conj values
-                                               value))
+                           (-mark-merge-right tree-2
+                                              from-seg
+                                              to-seg
+                                              (conj values
+                                                    value)
+                                              segments)
+                           (recur tree-2
                                   to-seg
                                   to
                                   value
+                                  from-seg
+                                  to-seg
+                                  (conj values
+                                        value)
+                                  true
                                   segments))))))))
 
 
 
-
-(defn mark 
+(defn mark
 
   ""
 
@@ -431,90 +676,159 @@
            :as segment]
           values] 
          & segments]    (subseq tree
-                                >= from)
-        segment-before  (first (rsubseq tree
-                                        >= nil
-                                        <  from))]
+                                >= from)]
     (if (or (nil? segment)
             (-disjoint? to
                         from-seg))
-      (-mark-join-pre tree
-                      from
-                      to
-                      #{value})
+      (-mark-merge-left tree
+                        from
+                        to
+                        #{value})
       (if (contains? values
                      value)
         ;; Found segment contains target value
         (if (-point<- from
                       from-seg)
-          (let [tree-2 (if (= (count values)
-                              1)
-                         (-mark-join-pre (dissoc tree
-                                                 segment)
-                                         from
-                                         to-seg
-                                         values)
-                         (-mark-join-pre tree
-                                         from
-                                         from-seg
-                                         #{value}))]
-            (if (-point<=+ to
-                           to-seg)
-              tree-2
-              (-mark-segments tree-2
+          (if (-point<=+ to
+                         to-seg)
+            (if (= (count values)
+                   1)
+              (-mark-merge-left (dissoc tree
+                                        segment)
+                                from
+                                to-seg
+                                values)
+              (-mark-merge-left tree
+                                from
+                                from-seg
+                                #{value}))
+            (if (= (count values)
+                   1)
+              (let [[[from-left
+                      to-left
+                      :as segment-left]
+                     values-left]       (first (rsubseq tree
+                                                         >= nil
+                                                         <  from))]
+                (if (and values-left
+                         (= to-left
+                            from)
+                         (= values-left
+                            values))
+                  (-mark-rest (dissoc tree
+                                      segment-left
+                                      segment)
                               to-seg
                               to
                               value
+                              from-left
+                              to-seg
+                              values
+                              true
+                              segments)
+                  (-mark-rest (dissoc tree
+                                      segment)
+                              to-seg
+                              to
+                              value
+                              from
+                              to-seg
+                              values
+                              true
                               segments)))
+              (-mark-rest (-mark-merge-left tree
+                                            from
+                                            from-seg
+                                            #{value})
+                          to-seg
+                          to
+                          value
+                          from-seg
+                          to-seg
+                          values
+                          false
+                          segments)))
           (if (-point<=+ to
                          to-seg)
             tree
-            (-mark-segments tree
-                            to-seg
-                            to
-                            value
-                            segments)))
+            (-mark-rest tree
+                        to-seg
+                        to
+                        value
+                        from-seg
+                        to-seg
+                        values
+                        false
+                        segments)))
         ;; Found segment does not contain target value
         (cond
           (= to
-             from-seg)        (-mark-join-pre tree
-                                              from
-                                              to
-                                              #{value})
+             from-seg)        ;; TODO. Might merge with segment nonetheless? YES! Difference with disjoint
+                              (-mark-merge-left tree
+                                                from
+                                                to
+                                                #{value})
           (= from
              from-seg)        (if (-point<+ to
                                             to-seg)
-                                (-mark-join-pre (-> tree
-                                                    (dissoc segment)
-                                                    (assoc [to to-seg]
-                                                           values))
-                                                from
-                                                to
-                                                (conj values
-                                                      value))
+                                (-mark-merge-left (-> tree
+                                                      (dissoc segment)
+                                                      (assoc [to to-seg]
+                                                             values))
+                                                  from
+                                                  to
+                                                  (conj values
+                                                        value))
                                 (if (= to
                                        to-seg)
-                                  (-mark-join (dissoc tree
-                                                      segment)
-                                              from-seg
-                                              to-seg
-                                              values
-                                              value
-                                              segments)
-                                  (-mark-segments (assoc tree
-                                                         segment
-                                                         (conj values
-                                                               value))
-                                                  to-seg
-                                                  to
-                                                  value
-                                                  segments)))
+                                  (-mark-merge (dissoc tree
+                                                       segment)
+                                               from-seg
+                                               to-seg
+                                               (conj values
+                                                     value)
+                                               segments)
+                                  (let [[[from-left
+                                          to-left
+                                          :as segment-left]
+                                         values-left]       (first (rsubseq tree
+                                                                             >= nil
+                                                                             <  from))]
+                                    (let [values-2 (conj values
+                                                         value)]
+                                      (if (and values-left
+                                               (= to-left
+                                                  from)
+                                               (= values-left
+                                                  values-2))
+                                        (-mark-rest (dissoc tree
+                                                            segment-left
+                                                            segment)
+                                                    to-seg
+                                                    to
+                                                    value
+                                                    from-left
+                                                    to-seg
+                                                    values-2
+                                                    true
+                                                    segments)
+                                        (-mark-rest (dissoc tree
+                                                            segment)
+                                                    to-seg
+                                                    to
+                                                    value
+                                                    from-seg
+                                                    to-seg
+                                                    (conj values
+                                                          value)
+                                                    true
+                                                    segments))))))
           (-point<- from       
-                    from-seg) (let [tree-2 (-mark-join-pre (dissoc tree
-                                                                   segment)
-                                                           from
-                                                           from-seg
-                                                           #{value})]
+                    from-seg) (let [tree-2 (-mark-merge-left (dissoc tree
+                                                                     segment)
+                                                             from
+                                                             from-seg
+                                                             #{value})]
                                 (if (-point<+ to
                                               to-seg)
                                   (assoc tree-2
@@ -523,20 +837,22 @@
                                          [to to-seg]   values)
                                   (if (= to
                                          to-seg)
-                                    (-mark-join tree-2
+                                    (-mark-merge-right tree-2
+                                                       from-seg
+                                                       to-seg
+                                                       (conj values
+                                                             value)
+                                                       segments)
+                                    (-mark-rest tree-2
+                                                to-seg
+                                                to
+                                                value
                                                 from-seg
                                                 to-seg
-                                                values
-                                                value
-                                                segments)
-                                    (-mark-segments (assoc tree-2
-                                                           segment
-                                                           (conj values
-                                                                 value))
-                                                    to-seg
-                                                    to
-                                                    value
-                                                    segments))))
+                                                (conj values
+                                                      value)
+                                                true
+                                                segments))))
           :else               (let [tree-2 (-> tree
                                                (dissoc segment)
                                                (assoc [from-seg from]
@@ -549,20 +865,22 @@
                                          [to to-seg] values)
                                   (if (= to
                                          to-seg)
-                                    (-mark-join tree-2
+                                    (-mark-merge-right tree-2
+                                                       from
+                                                       to
+                                                       (conj values
+                                                             value)
+                                                       segments)
+                                    (-mark-rest tree-2
+                                                to-seg
+                                                to
+                                                value
                                                 from
                                                 to-seg
-                                                values
-                                                value
-                                                segments)
-                                    (-mark-segments (assoc tree-2
-                                                           [from to-seg]
-                                                           (conj values
-                                                                 value))
-                                                    to-seg
-                                                    to
-                                                    value
-                                                    segments)))))))))
+                                                (conj values
+                                                      value)
+                                                true
+                                                segments)))))))))
 
 
 
