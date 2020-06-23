@@ -1313,4 +1313,138 @@
                                    :y))))
         "Newly met segments with equal values are merged at the end of an interval starting (interval FINISHES segment)")
 
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               10
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :x))))
+        "When adding a new segment, merges a newly met prior segment")
+
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               15
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   12
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :x))))
+        "When extending an existing segment with one value to the left, merges a newly met prior segment")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   7
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 5
+                                   7
+                                   :x))))
+        "Merges left subfragment with meeting prior segment if both have equal values")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   12
+                                   :x)
+                    (interval/mark 10
+                                   12
+                                   :y)
+                    (interval/mark 10
+                                   12
+                                   :x)
+                    (interval/mark 12
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   12
+                                   :x))))
+        "When creating a new segment to the left, merges a newly met prior segment if both have equal values")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)))
+
+           (seq (-> (interval/tree)
+                               (interval/mark 0
+                                              5
+                                              :x)
+                               (interval/mark 10
+                                              15
+                                              :y)
+                               (interval/mark 5
+                                              15
+                                              :x))))
+        "When extending an existing segment with several values to the left, merges a newly met prior segment")
+
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 0
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    )))
+        "Updating a segment merges it with left and right meeting segments if they all have equal values")
+
+
+
   )

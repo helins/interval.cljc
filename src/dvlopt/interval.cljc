@@ -254,6 +254,32 @@
 
 
 
+(defn- -mark-join-pre
+
+  ""
+
+  [tree from to values]
+
+  (let [[[from-prior
+          to-prior
+          :as segment-prior]
+         values-prior]       (first (rsubseq tree
+                                             >= nil
+                                             <  from))]
+    (if (and values-prior
+             (= to-prior
+                from)
+             (= values-prior
+                values))
+      (-> tree
+          (dissoc segment-prior)
+          (assoc [from-prior to]
+                 values))
+      (assoc tree
+             [from to]
+             values))))
+
+
 
 (defn- -mark-join
 
@@ -272,15 +298,15 @@
                 from-next)
              (= values-next
                 values-2))
-      (-> tree
-          (dissoc [from to]       ;; TODO. Unnecessary when (not= from-2 from-seg) (cf. [[mark]])
-                  segment-next)
-          (assoc [from to-next]
-                 values-2))
-      (assoc tree
-             [from to]
-             values-2))))
-
+      (-mark-join-pre (dissoc tree
+                              segment-next)
+                      from
+                      to-next
+                      values-2)
+      (-mark-join-pre tree
+                      from
+                      to
+                      values-2))))
 
 
 
@@ -405,26 +431,33 @@
            :as segment]
           values] 
          & segments]    (subseq tree
-                                >= from)]
+                                >= from)
+        segment-before  (first (rsubseq tree
+                                        >= nil
+                                        <  from))]
     (if (or (nil? segment)
             (-disjoint? to
                         from-seg))
-      (assoc tree
-             [from to]
-             #{value})
+      (-mark-join-pre tree
+                      from
+                      to
+                      #{value})
       (if (contains? values
                      value)
+        ;; Found segment contains target value
         (if (-point<- from
                       from-seg)
           (let [tree-2 (if (= (count values)
                               1)
-                         (-> tree
-                             (dissoc segment)
-                             (assoc [from to-seg]
-                                    values))
-                         (assoc tree
-                                [from from-seg]
-                                #{value}))]
+                         (-mark-join-pre (dissoc tree
+                                                 segment)
+                                         from
+                                         to-seg
+                                         values)
+                         (-mark-join-pre tree
+                                         from
+                                         from-seg
+                                         #{value}))]
             (if (-point<=+ to
                            to-seg)
               tree-2
@@ -441,22 +474,28 @@
                             to
                             value
                             segments)))
+        ;; Found segment does not contain target value
         (cond
           (= to
-             from-seg)        (assoc tree
-                                     [from to]
-                                     #{value})
+             from-seg)        (-mark-join-pre tree
+                                              from
+                                              to
+                                              #{value})
           (= from
              from-seg)        (if (-point<+ to
                                             to-seg)
-                                (-> tree
-                                    (dissoc segment)
-                                    (assoc [from to] (conj values
-                                                             value)
-                                           [to to-seg] values))
+                                (-mark-join-pre (-> tree
+                                                    (dissoc segment)
+                                                    (assoc [to to-seg]
+                                                           values))
+                                                from
+                                                to
+                                                (conj values
+                                                      value))
                                 (if (= to
                                        to-seg)
-                                  (-mark-join tree
+                                  (-mark-join (dissoc tree
+                                                      segment)
                                               from-seg
                                               to-seg
                                               values
@@ -471,10 +510,11 @@
                                                   value
                                                   segments)))
           (-point<- from       
-                    from-seg) (let [tree-2 (-> tree
-                                               (dissoc segment)
-                                               (assoc [from from-seg]
-                                                      #{value}))]
+                    from-seg) (let [tree-2 (-mark-join-pre (dissoc tree
+                                                                   segment)
+                                                           from
+                                                           from-seg
+                                                           #{value})]
                                 (if (-point<+ to
                                               to-seg)
                                   (assoc tree-2
@@ -504,7 +544,7 @@
                                 (if (-point<+ to
                                               to-seg)
                                   (assoc tree-2
-                                         [from to]  (conj values
+                                         [from to]   (conj values
                                                            value)
                                          [to to-seg] values)
                                   (if (= to
