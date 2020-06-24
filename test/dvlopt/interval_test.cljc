@@ -11,6 +11,8 @@
             [dvlopt.interval :as interval]))
 
 
+;; TODO. Open intervals
+
 ;;;;;;;;;;
 
 
@@ -147,10 +149,6 @@
           "INV OVERLAP erasing (half-open)")))
 
 
-;; TODO. Open intervals
-
-
-
 
 (t/deftest mark-disjoint
 
@@ -208,6 +206,29 @@
 
 
 
+(t/deftest mark-disjoint-defrag
+
+   (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 20
+                                   30
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 20
+                                   30
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :x))))
+        "INV MEETS, disjoint with right segment"))
+
+
+
 (t/deftest mark-meet
 
   ;; X MEETS Y tree
@@ -258,6 +279,98 @@
                                   8
                                   :x)))
           "Erasing X across contiguous segments, non-containing segments left intact")))
+
+
+
+(t/deftest mark-meet-defrag
+
+  (let [tree (interval/mark (interval/tree)
+                            5
+                            10
+                            :x)]
+    (t/is (= (seq tree)
+             (seq (-> (interval/tree)
+                      (interval/mark 5
+                                     8
+                                     :x)
+                      (interval/mark 8
+                                     10
+                                     :x)))
+             (seq (-> (interval/tree)
+                      (interval/mark 8
+                                     10
+                                     :x)
+                      (interval/mark 5
+                                     8
+                                     :x))))
+          "MEETS or INV MEETS"))
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 0
+                                   10
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 5
+                                   10
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   5
+                                   :y))))
+        "MEETS or INV MEETS (> 1 value")
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               15
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :x))))
+        "MEETS, left merge")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 0
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   10
+                                   :y))))
+        "MEETS, left merge (> 1 value)"))
 
 
 
@@ -341,6 +454,34 @@
                                   nil
                                   :x)))
           "Partially erasing a value from a segment, other values remains")))
+
+
+
+(t/deftest mark-equal-defrag
+
+  (let [tree (interval/mark (interval/tree)
+                            5
+                            10
+                            :x)]
+
+    (t/is (= (seq tree)
+             (seq (interval/mark tree
+                                 5
+                                 10
+                                 :x))
+             (seq (interval/mark tree
+                                 5
+                                 8
+                                 :x))
+             (seq (interval/mark tree
+                                 8
+                                 10
+                                 :x))
+             (seq (interval/mark tree
+                                 6
+                                 8
+                                 :x)))
+          "Contains target value within, no need to fragment")))
 
 
 
@@ -556,6 +697,29 @@
 
 
 
+(t/deftest mark-start-defrag
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   7
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :y)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 5
+                                   7
+                                   :x))))
+        "STARTS, left merge"))
+
+
+
 (t/deftest mark-finish
 
 
@@ -671,6 +835,52 @@
     
     (t/is (nil? (get tree
                      15)))))
+
+
+
+(t/deftest mark-finish-defrag
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y))))
+        "FINISHES, right merge")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   15
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)))
+
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   15
+                                   :x))))
+        "INV FINISHES, left merge"))
 
 
 
@@ -929,7 +1139,115 @@
 
 
 
-(t/deftest mark-segments
+(t/deftest mark-overlap-defrag
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               5
+                               10
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 8
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   9
+                                   :x))))
+        "OVERLAPS")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   12
+                                   :x))))
+        "OVERLAPS, merge")
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               15
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   12
+                                   :x))))
+        "OVERLAPS, extend existing segment + left merge")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   12
+                                   :x)
+                    (interval/mark 10
+                                   12
+                                   :y)
+                    (interval/mark 10
+                                   12
+                                   :x)
+                    (interval/mark 12
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 5
+                                   12
+                                   :x))))
+        "OVERLAPS, left merge (> 1 value)")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 0
+                                   10
+                                   :y))))
+        "OVERLAPS, right merge"))
+
+
+
+(t/deftest mark-rest
 
   ;; Updating several segments during one mark
 
@@ -1201,250 +1519,3 @@
                                     10
                                     :y))))
         "Erasing defragments by merging adjacent equal values"))
-
-
-
-(t/deftest mark-defrag
-
-  (let [tree (interval/mark (interval/tree)
-                            5
-                            10
-                            :x)]
-
-    (t/is (= (seq tree)
-             (seq (interval/mark tree
-                                 5
-                                 10
-                                 :x))
-             (seq (interval/mark tree
-                                 5
-                                 8
-                                 :x))
-             (seq (interval/mark tree
-                                 8
-                                 10
-                                 :x))
-             (seq (interval/mark tree
-                                 6
-                                 8
-                                 :x)))
-          "Avoid fragmenting with unnecessary updates to a single segment")
-
-    (t/is (= (seq tree)
-             (seq (-> (interval/tree)
-                      (interval/mark 8
-                                     10
-                                     :x)
-                      (interval/mark 5
-                                     9
-                                     :x)))
-             (seq (-> (interval/tree)
-                      (interval/mark 8
-                                     10
-                                     :x)
-                      (interval/mark 5
-                                     8
-                                     :x))))
-          "Both having equal values, merges an overlapping or meeting interval with the existing segment instead of creating a new segment"))
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   10
-                                   :x)
-                    (interval/mark 0
-                                   10
-                                   :y)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   10
-                                   :x)
-                    (interval/mark 5
-                                   10
-                                   :y)
-                    (interval/mark 0
-                                   5
-                                   :y))))
-        "Newly met segments with equal values are merged at the end of an interval starting (interval = segment)")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   5
-                                   :y)
-                    (interval/mark 5
-                                   15
-                                   :x)
-                    (interval/mark 5
-                                   15
-                                   :y)))
-           (seq (-> (interval/tree)
-                    (interval/mark 5
-                                   15
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :y)
-                    (interval/mark 0
-                                   10
-                                   :y))))
-        "Newly met segments with equal values are merged at the end of an interval starting (interval OVERLAPS segment)")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   15
-                                   :x)
-                    (interval/mark 5
-                                   15
-                                   :y)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   10
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :y)
-                    (interval/mark 10
-                                   15
-                                   :x)
-                    (interval/mark 5
-                                   10
-                                   :y))))
-        "Newly met segments with equal values are merged at the end of an interval starting (interval FINISHES segment)")
-
-
-  (t/is (= (seq (interval/mark (interval/tree)
-                               0
-                               10
-                               :x))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   5
-                                   :x)
-                    (interval/mark 5
-                                   10
-                                   :x))))
-        "When adding a new segment, merges a newly met prior segment")
-
-
-  (t/is (= (seq (interval/mark (interval/tree)
-                               0
-                               15
-                               :x))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   5
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :x)
-                    (interval/mark 5
-                                   12
-                                   :x)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   5
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :x)
-                    (interval/mark 5
-                                   10
-                                   :x))))
-        "When extending an existing segment with one value to the left, merges a newly met prior segment")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   10
-                                   :y)
-                    (interval/mark 0
-                                   7
-                                   :x)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   10
-                                   :y)
-                    (interval/mark 0
-                                   5
-                                   :x)
-                    (interval/mark 5
-                                   7
-                                   :x))))
-        "Merges left subfragment with meeting prior segment if both have equal values")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   12
-                                   :x)
-                    (interval/mark 10
-                                   12
-                                   :y)
-                    (interval/mark 10
-                                   12
-                                   :x)
-                    (interval/mark 12
-                                   15
-                                   :y)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   5
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :y)
-                    (interval/mark 5
-                                   12
-                                   :x))))
-        "When creating a new segment to the left, merges a newly met prior segment if both have equal values")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   15
-                                   :x)
-                    (interval/mark 10
-                                   15
-                                   :y)))
-
-           (seq (-> (interval/tree)
-                               (interval/mark 0
-                                              5
-                                              :x)
-                               (interval/mark 10
-                                              15
-                                              :y)
-                               (interval/mark 5
-                                              15
-                                              :x))))
-        "When extending an existing segment with several values to the left, merges a newly met prior segment")
-
-
-  (t/is (= (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   15
-                                   :x)
-                    (interval/mark 0
-                                   15
-                                   :y)))
-           (seq (-> (interval/tree)
-                    (interval/mark 0
-                                   15
-                                   :x)
-                    (interval/mark 0
-                                   5
-                                   :y)
-                    (interval/mark 10
-                                   15
-                                   :y)
-                    (interval/mark 5
-                                   10
-                                   :y)
-                    )))
-        "Updating a segment merges it with left and right meeting segments if they all have equal values")
-
-
-
-  )
