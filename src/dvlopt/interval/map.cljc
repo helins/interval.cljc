@@ -7,255 +7,12 @@
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.core :as clj]
-            [clojure.set  :as clj.set]))
+  (:require [clojure.core         :as clj]
+            [clojure.set          :as clj.set]
+            [dvlopt.interval.util :as interval.util]))
 
 
-;;;;;;;;;; Private
-
-
-(defn- -disjoint?
-
-  ""
-
-  [to from]
-
-  (and (some? to)
-       (some? from)
-       (< to
-          from)))
-
-
-(defn- -overlapping?
-
-  ;;
-
-  [to from]
-
-  (or (nil? to)
-      (nil? from)
-      (> to
-         from)))
-
-
-(defn- -erase-value
-
-  ;;
-
-  [tree segment values value]
-
-  (let [values-2 (disj values
-                       value)]
-    (if (empty? values-2)
-      (dissoc tree
-              segment)
-      (assoc tree
-             segment
-             values-2))))
-
-
-
-(defn- -point<-
-
-  ;; Handles nil as infinity.
-
-  [a b]
-
-  (if (nil? a)
-    (some? b)
-    (and (some? b)
-         (< a
-            b))))
-
-
-
-(defn- -point<=-
-
-  ;;
-
-  [a b]
-
-  (or (= a
-         b)
-      (nil? a)
-      (and (some? b)
-           (<= a
-               b))))
-
-
-
-(defn- -point<+
-
-  ;; Handles nil as infinity.
-
-  [a b]
-
-  (if (nil? b)
-    (some? a)
-    (and (some? a)
-         (< a
-            b))))
-
-
-
-(defn- -point<=+
-
-  ;;
-
-  [a b]
-
-  (or (= a
-         b)
-      (nil? b)
-      (and (some? a)
-           (<= a
-               b))))
-
-
-
-(defn- -restore-values
-
-  ;;
-
-  [tree segment values value]
-
-  (let [values-2 (disj values
-                       value)]
-    (if (empty? values-2)
-      tree
-      (assoc tree
-             segment
-             values-2))))
-
-
-;;;;;;;;;; Public API
-
-
-(defn- -erase-segments
-
-  ;; Used by [[erase]].
-  ;;
-  ;; Behaves very much like [[erase]] but optimizes the algorithm is not dealing with the first
-  ;; segment anymore. Is pretty much a copy/paste, but the recursion and all the destructuring
-  ;; make it not worth the trouble abstracting that away.
-
-  [value to tree [[[from-seg
-                    to-seg
-                    :as segment]
-                   values]
-                  & segments]]
-
-  (if (and segment
-           (-overlapping? to
-                          from-seg))
-    (if (contains? values
-                   value)
-      (if (-point<+ to
-                    to-seg)
-        (-restore-values (-> tree
-                             (dissoc segment)
-                             (assoc [to to-seg]
-                                    values))
-                         [from-seg to]
-                         values
-                         value)
-        (let [tree-2 (-erase-value tree
-                                   segment
-                                   values
-                                   value)]
-          (if (= to
-                 to-seg)
-            tree-2
-            (recur value
-                   to
-                   tree-2
-                   segments))))
-      (if (-point<=+ to
-                     to-seg)
-        tree
-        (recur value
-               to
-               tree
-               segments)))
-    tree))
-
-
-
-(defn erase
-
-  ""
-
-  [tree from to value]
-
-  (let [[[[from-seg
-           to-seg
-           :as segment]
-          values]
-         & segments]    (subseq tree
-                                >= from)]
-    (if (and segment
-             (-overlapping? to
-                            from-seg))
-      (if (contains? values
-                     value)
-        (if (-point<=- from
-                       from-seg)
-          (if (-point<+ to
-                        to-seg)
-            (-restore-values (-> tree
-                                 (dissoc segment)
-                                 (assoc [to to-seg]
-                                        values))
-                             [from-seg to]
-                             values
-                             value)
-            (let [tree-2 (-erase-value tree
-                                       segment
-                                       values
-                                       value)]
-              (if (= to
-                     to-seg)
-                tree-2
-                (-erase-segments value
-                                 to
-                                 tree-2
-                                 segments))))
-          (let [tree-2 (-> tree
-                           (dissoc segment)
-                           (assoc [from-seg from]
-                                  values))]
-            (if (-point<+ to
-                          to-seg)
-              (-restore-values (assoc tree-2
-                                      [to to-seg]
-                                      values)
-                               [from to]
-                               values
-                               value)
-              (let [tree-3 (-restore-values tree-2
-                                            [from to-seg]
-                                            values
-                                            value)]
-                (if (= to
-                       to-seg)
-                  tree-3
-                  (-erase-segments value
-                                   to
-                                   tree-3
-                                   segments))))))
-        (if (-point<=+ to
-                       to-seg)
-          tree
-          (-erase-segments value
-                           to
-                           tree
-                           segments)))
-      tree)))
-
-
-
-
-
+;;;;;;;;;; Marking intervals
 
 
 (defn- -mark-merge-left
@@ -333,9 +90,6 @@
                         from
                         to
                         values))))
-
-
-
 
 
 
@@ -432,8 +186,8 @@
                                                                & segments]]
 
   (if (or (nil? segment)
-          (-disjoint? to
-                      from-seg))
+          (interval.util/disjoint? to
+                                   from-seg))
     (-markloop-merge-left tree
                           from-acc
                           to-acc
@@ -444,10 +198,10 @@
                           #{value})
     (if (contains? values
                    value)
-      (if (-point<- from-2
-                    from-seg)
-        (if (-point<=- to
-                       to-seg)
+      (if (interval.util/point<- from-2
+                                 from-seg)
+        (if (interval.util/point<=- to
+                                    to-seg)
           (if (= (count values)
                  1)
             (-markloop-merge-left (dissoc tree
@@ -518,8 +272,8 @@
                    values
                    false
                    segments)))
-        (if (-point<=+ to
-                       to-seg)
+        (if (interval.util/point<=+ to
+                                    to-seg)
           ;; TODO. Might not need to potentially merge left if `assoc-acc?` is true?
           (-markloop-merge-left tree
                                 from-acc
@@ -570,8 +324,8 @@
                                            to
                                            #{value})
         (= from-2
-           from-seg) (if (-point<+ to
-                                   to-seg)
+           from-seg) (if (interval.util/point<+ to
+                                                to-seg)
                        (-> tree
                            (dissoc segment)
                            (assoc [to to-seg]
@@ -638,8 +392,8 @@
                                                              from-2
                                                              from-seg
                                                              #{value}))]
-                       (if (-point<+ to
-                                     to-seg)
+                       (if (interval.util/point<+ to
+                                                  to-seg)
                          (assoc tree-2
                                 [from-seg to] (conj values
                                                     value)
@@ -681,8 +435,8 @@
          & segments]    (subseq tree
                                 >= from)]
     (if (or (nil? segment)
-            (-disjoint? to
-                        from-seg))
+            (interval.util/disjoint? to
+                                     from-seg))
       (-mark-merge-left tree
                         from
                         to
@@ -690,10 +444,10 @@
       (if (contains? values
                      value)
         ;; Found segment contains target value
-        (if (-point<- from
-                      from-seg)
-          (if (-point<=+ to
-                         to-seg)
+        (if (interval.util/point<- from
+                                   from-seg)
+          (if (interval.util/point<=+ to
+                                      to-seg)
             (if (= (count values)
                    1)
               (-mark-merge-left (dissoc tree
@@ -751,8 +505,8 @@
                           values
                           false
                           segments)))
-          (if (-point<=+ to
-                         to-seg)
+          (if (interval.util/point<=+ to
+                                      to-seg)
             tree
             (-mark-rest tree
                         to-seg
@@ -771,8 +525,8 @@
                                                 to
                                                 #{value})
           (= from
-             from-seg)        (if (-point<+ to
-                                            to-seg)
+             from-seg)        (if (interval.util/point<+ to
+                                                         to-seg)
                                 (-mark-merge-left (-> tree
                                                       (dissoc segment)
                                                       (assoc [to to-seg]
@@ -825,14 +579,15 @@
                                                           value)
                                                     true
                                                     segments))))))
-          (-point<- from       
-                    from-seg) (let [tree-2 (-mark-merge-left (dissoc tree
+          (interval.util/point<-
+            from       
+            from-seg)         (let [tree-2 (-mark-merge-left (dissoc tree
                                                                      segment)
                                                              from
                                                              from-seg
                                                              #{value})]
-                                (if (-point<+ to
-                                              to-seg)
+                                (if (interval.util/point<+ to
+                                                           to-seg)
                                   (assoc tree-2
                                          [from-seg to] (conj values
                                                              value)
@@ -859,8 +614,8 @@
                                                (dissoc segment)
                                                (assoc [from-seg from]
                                                       values))]
-                                (if (-point<+ to
-                                              to-seg)
+                                (if (interval.util/point<+ to
+                                                           to-seg)
                                   (assoc tree-2
                                          [from to]   (conj values
                                                            value)
@@ -885,35 +640,165 @@
                                                 segments)))))))))
 
 
+;;;;;;;;;; Erasing intervals
 
-(defn lesser-than 
+
+(defn- -erase-value
+
+  ;;
+
+  [tree segment values value]
+
+  (let [values-2 (disj values
+                       value)]
+    (if (empty? values-2)
+      (dissoc tree
+              segment)
+      (assoc tree
+             segment
+             values-2))))
+
+
+
+(defn- -restore-values
+
+  ;;
+
+  [tree segment values value]
+
+  (let [values-2 (disj values
+                       value)]
+    (if (empty? values-2)
+      tree
+      (assoc tree
+             segment
+             values-2))))
+
+
+
+(defn- -erase-segments
+
+  ;; Used by [[erase]].
+  ;;
+  ;; Behaves very much like [[erase]] but optimizes the algorithm is not dealing with the first
+  ;; segment anymore. Is pretty much a copy/paste, but the recursion and all the destructuring
+  ;; make it not worth the trouble abstracting that away.
+
+  [value to tree [[[from-seg
+                    to-seg
+                    :as segment]
+                   values]
+                  & segments]]
+
+  (if (and segment
+           (interval.util/overlapping? to
+                                       from-seg))
+    (if (contains? values
+                   value)
+      (if (interval.util/point<+ to
+                                 to-seg)
+        (-restore-values (-> tree
+                             (dissoc segment)
+                             (assoc [to to-seg]
+                                    values))
+                         [from-seg to]
+                         values
+                         value)
+        (let [tree-2 (-erase-value tree
+                                   segment
+                                   values
+                                   value)]
+          (if (= to
+                 to-seg)
+            tree-2
+            (recur value
+                   to
+                   tree-2
+                   segments))))
+      (if (interval.util/point<=+ to
+                                  to-seg)
+        tree
+        (recur value
+               to
+               tree
+               segments)))
+    tree))
+
+
+
+(defn erase
 
   ""
 
-  [a b]
+  [tree from to value]
 
-  (if (nil? a)
-    true
-    (if (nil? b)
-      false
-      (if (number? a)
-        (if (number? b)
-          (< a
-             b)
-          (if-some [b-2 (first b)]
-            (< a
-               b-2)
-            false))
-        (if-some [a-2 (second a)]
-          (if (number? b)
-            (<= a-2
-                b)
-            (if-some [b-2 (first b)]
-              (<= a-2
-                  b-2)
-              false))
-          false)))))
+  (let [[[[from-seg
+           to-seg
+           :as segment]
+          values]
+         & segments]    (subseq tree
+                                >= from)]
+    (if (and segment
+             (interval.util/overlapping? to
+                                         from-seg))
+      (if (contains? values
+                     value)
+        (if (interval.util/point<=- from
+                                    from-seg)
+          (if (interval.util/point<+ to
+                                     to-seg)
+            (-restore-values (-> tree
+                                 (dissoc segment)
+                                 (assoc [to to-seg]
+                                        values))
+                             [from-seg to]
+                             values
+                             value)
+            (let [tree-2 (-erase-value tree
+                                       segment
+                                       values
+                                       value)]
+              (if (= to
+                     to-seg)
+                tree-2
+                (-erase-segments value
+                                 to
+                                 tree-2
+                                 segments))))
+          (let [tree-2 (-> tree
+                           (dissoc segment)
+                           (assoc [from-seg from]
+                                  values))]
+            (if (interval.util/point<+ to
+                                       to-seg)
+              (-restore-values (assoc tree-2
+                                      [to to-seg]
+                                      values)
+                               [from to]
+                               values
+                               value)
+              (let [tree-3 (-restore-values tree-2
+                                            [from to-seg]
+                                            values
+                                            value)]
+                (if (= to
+                       to-seg)
+                  tree-3
+                  (-erase-segments value
+                                   to
+                                   tree-3
+                                   segments))))))
+        (if (interval.util/point<=+ to
+                                    to-seg)
+          tree
+          (-erase-segments value
+                           to
+                           tree
+                           segments)))
+      tree)))
 
+
+;;;;;;;;;; Rest of public API
 
 
 (defn tree
@@ -922,7 +807,7 @@
 
   []
 
-  (sorted-map-by lesser-than))
+  (sorted-map-by interval.util/cmp))
 
 
 
