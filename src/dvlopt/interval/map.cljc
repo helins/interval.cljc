@@ -1,4 +1,4 @@
-(ns dvlopt.interval
+(ns dvlopt.interval.map
 
   ""
 

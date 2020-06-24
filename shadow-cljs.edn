@@ -1,7 +1,7 @@
 {:builds
  {:lib-dev
   {:modules    {:main {:entries [cljs.user
-                                 dvlopt.interval]}}
+                                 dvlopt.interval.map]}}
    :output-dir "public/js"
    :target     :browser}
   
