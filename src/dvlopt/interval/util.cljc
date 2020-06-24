@@ -67,7 +67,7 @@
 
 (defn point<-
 
-  ;; Handles nil as infinity.
+  ;; Handles nil as -Infinity.
 
   [a b]
 
@@ -96,7 +96,7 @@
 
 (defn point<+
 
-  ;; Handles nil as infinity.
+  ;; Handles nil as +Infinity.
 
   [a b]
 

@@ -1,7 +1,10 @@
 {:builds
  {:lib-dev
   {:modules    {:main {:entries [cljs.user
-                                 dvlopt.interval.map]}}
+                                 dvlopt.interval.map
+                                 dvlopt.interval.map-test
+                                 dvlopt.interval.util
+                                 dvlopt.interval.util-test]}}
    :output-dir "public/js"
    :target     :browser}
   
