@@ -349,20 +349,19 @@
               from)
            (= values-acc
               values))
-    (let [tree-2 (assoc tree
-                        [from-acc to]
-                        values)]
-      (if assoc-acc?
-        tree-2
-        (dissoc tree-2
-                [from-acc to-acc])))
-    (let [tree-2 (assoc tree
-                        [from to]
-                        values)]
-      (if assoc-acc?
-        (assoc tree-2
-               [from-acc to-acc] values-acc)
-        tree-2))))
+    (assoc (if assoc-acc?
+             tree
+             (dissoc tree
+                     [from-acc to-acc]))
+           [from-acc to]
+           values)
+    (assoc (if assoc-acc?
+             (assoc tree
+                    [from-acc to-acc]
+                    values-acc)
+             tree)
+           [from to]
+           values)))
 
 
 
@@ -389,6 +388,7 @@
       (assoc tree
              [from to]
              values))))
+
 
 
 (defn- -markloop-merge
@@ -476,8 +476,8 @@
               (recur (let [tree-2 (dissoc tree
                                           segment)]
                        (if assoc-acc?
-                         tree
-                         (dissoc tree
+                         tree-2
+                         (dissoc tree-2
                                  [from-acc to-acc])))
                      to-seg
                      to
@@ -536,8 +536,8 @@
             (recur (let [tree-2 (dissoc tree
                                         segment)]
                      (if assoc-acc?
-                       tree
-                       (dissoc tree
+                       tree-2
+                       (dissoc tree-2
                                [from-acc to-acc])))
                    to-seg
                    to
@@ -586,7 +586,8 @@
                                                        value)))
                        (if (= to
                               to-seg)
-                         (-markloop-merge tree
+                         (-markloop-merge (dissoc tree
+                                                  segment)
                                           from-acc
                                           to-acc
                                           values-acc
@@ -614,10 +615,12 @@
                                     values-2
                                     true
                                     segments)
-                             (recur (if assoc-acc?
-                                      (assoc tree
-                                             [from-acc to-acc] values-acc)
-                                      tree)
+                             (recur (let [tree-2 (dissoc tree
+                                                         segment)]
+                                      (if assoc-acc?
+                                        (assoc tree-2
+                                               [from-acc to-acc] values-acc)
+                                        tree-2))
                                     to-seg
                                     to
                                     value
@@ -627,14 +630,14 @@
                                     true
                                     segments)))))
         :else         (let [tree-2 (-> tree
-                                      (dissoc segment)
-                                      (-markloop-merge-left from-acc
-                                                            to-acc
-                                                            values-acc
-                                                            assoc-acc?
-                                                            from-2
-                                                            from-seg
-                                                            #{value}))]
+                                       (dissoc segment)
+                                       (-markloop-merge-left from-acc
+                                                             to-acc
+                                                             values-acc
+                                                             assoc-acc?
+                                                             from-2
+                                                             from-seg
+                                                             #{value}))]
                        (if (-point<+ to
                                      to-seg)
                          (assoc tree-2
@@ -763,8 +766,7 @@
         ;; Found segment does not contain target value
         (cond
           (= to
-             from-seg)        ;; TODO. Might merge with segment nonetheless? YES! Difference with disjoint
-                              (-mark-merge-left tree
+             from-seg)        (-mark-merge-left tree
                                                 from
                                                 to
                                                 #{value})

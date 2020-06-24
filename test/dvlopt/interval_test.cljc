@@ -229,6 +229,128 @@
 
 
 
+(t/deftest mark-rest-disjoint
+
+  ;; Also tests several ways of going from [[mark]] to [[-mark-rest]].
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   13
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 0
+                                   13
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 3
+                                   13
+                                   :x))))
+        "Left merge, initial segments contains target values")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y))))
+        "STARTS with first segment")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   8
+                                   :x)
+                    (interval/mark 8
+                                   10
+                                   :y)
+                    (interval/mark 8
+                                   10
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 8
+                                   15
+                                   :y))))
+        "FINISHES first segment")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :y)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 10
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 0
+                                   15
+                                   :y))))
+        "OVERLAPS first segment")
+                                   
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               15
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 0
+                                   15
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   3
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 3
+                                   15
+                                   :x))))
+        "OVERLAPS initial segment + idem with left merge"))
+
+
+
 (t/deftest mark-meet
 
   ;; X MEETS Y tree
@@ -374,6 +496,36 @@
 
 
 
+(t/deftest mark-rest-meet
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               0
+                               15
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :x)
+                    (interval/mark 3
+                                   10
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 0
+                                   5
+                                   :x)
+                    (interval/mark 10
+                                   12
+                                   :x)
+                    (interval/mark 3
+                                   15
+                                   :x))))
+        "Merge"))
+
+
+
 (t/deftest mark-equal
 
   ;; X = Y tree
@@ -482,6 +634,48 @@
                                  8
                                  :x)))
           "Contains target value within, no need to fragment")))
+
+
+
+(t/deftest mark-rest-equal
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               5
+                               20
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 7
+                                   20
+                                   :x))))
+        "Merge")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   15
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 7
+                                   15
+                                   :y))))
+        "Merge (> 1 value)"))
 
 
 
@@ -717,6 +911,42 @@
                                    7
                                    :x))))
         "STARTS, left merge"))
+
+
+
+(t/deftest mark-rest-start
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   13
+                                   :x)
+                    (interval/mark 5
+                                   13
+                                   :y)
+                    (interval/mark 13
+                                   15
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 5
+                                   10
+                                   :y)
+                    (interval/mark 5
+                                   13
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   15
+                                   :x)
+                    (interval/mark 7
+                                   10
+                                   :y)
+                    (interval/mark 5
+                                   13
+                                   :y))))
+        "Merge"))
 
 
 
@@ -1247,9 +1477,76 @@
 
 
 
+(t/deftest mark-rest-overlap
+
+  (t/is (= (seq (interval/mark (interval/tree)
+                               5
+                               20
+                               :x))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 7
+                                   17
+                                   :x))))
+        "OVERLAP, merge")
+
+  (t/is (= (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   7
+                                   :x)
+                    (interval/mark 7
+                                   10
+                                   :y)
+                    (interval/mark 7
+                                   10
+                                   :x)
+                    (interval/mark 10
+                                   15
+                                   :y)
+                    (interval/mark 15
+                                   17
+                                   :x)
+                    (interval/mark 15
+                                   17
+                                   :y)
+                    (interval/mark 17
+                                   20
+                                   :x)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 7
+                                   17
+                                   :y)))
+           (seq (-> (interval/tree)
+                    (interval/mark 5
+                                   10
+                                   :x)
+                    (interval/mark 15
+                                   20
+                                   :x)
+                    (interval/mark 12
+                                   14
+                                   :y)
+                    (interval/mark 7
+                                   17
+                                   :y))))
+        "OVERLAP (> 1 value)"))
+
+
+
 (t/deftest mark-rest
 
-  ;; Updating several segments during one mark
+  ;; Updating several segments during one mark with a new value
 
   (let [tree (-> (interval/tree)
                  (interval/mark 10
