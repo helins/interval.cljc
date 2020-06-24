@@ -15,8 +15,8 @@
 (require '[nrepl.server])  (defonce server (nrepl.server/start-server :port 4000))
 
 
-(def tree
-     (-> (interval.map/tree)
+(def m
+     (-> interval.map/empty
          (interval.map/mark 0   15  :a)
          (interval.map/mark 12  nil :b)
          (interval.map/mark 20  25  :c)

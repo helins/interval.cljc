@@ -9,7 +9,8 @@
 
   (:require [clojure.core         :as clj]
             [clojure.set          :as clj.set]
-            [dvlopt.interval.util :as interval.util]))
+            [dvlopt.interval.util :as interval.util])
+  (:refer-clojure :exclude [empty]))
 
 
 ;;;;;;;;;; Marking intervals
@@ -801,11 +802,9 @@
 ;;;;;;;;;; Rest of public API
 
 
-(defn tree
+(def empty
 
   ""
-
-  []
 
   (sorted-map-by interval.util/cmp))
 
