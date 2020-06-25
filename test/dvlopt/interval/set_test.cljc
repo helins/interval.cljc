@@ -11,6 +11,68 @@
 ;;;;;;;;;;
 
 
+(t/deftest erase
+
+  (let [iset (interval.set/mark interval.set/empty
+                                5
+                                10)]
+    (t/is (nil? (seq (interval.set/erase iset
+                                         5
+                                         10)))
+          "Mono-segment interval")
+
+    (t/is (= (seq (interval.set/mark interval.set/empty
+                                     7
+                                     10))
+             (seq (interval.set/erase iset
+                                      5
+                                      7)))
+          "STARTS")
+
+    (t/is (= (seq (interval.set/mark interval.set/empty
+                                     5
+                                     7))
+             (seq (interval.set/erase iset
+                                      7
+                                      10)))
+          "ENDS")
+
+    (t/is (= (seq (-> interval.set/empty
+                      (interval.set/mark 5
+                                         7)
+                      (interval.set/mark 9
+                                         10)))
+             (seq (interval.set/erase iset
+                                      7
+                                      9)))
+          "DURING")
+
+    (t/is (nil? (seq (-> interval.set/empty
+                         (interval.set/mark 5
+                                            10)
+                         (interval.set/mark 20
+                                            30)
+                         (interval.set/mark 40
+                                            45)
+                         (interval.set/erase 5
+                                             nil))))
+          "Across several segments")
+
+    (t/is (= (seq (interval.set/mark interval.set/empty
+                                     17
+                                     20))
+             (seq (-> interval.set/empty
+                      (interval.set/mark 5
+                                         10)
+                      (interval.set/mark 15
+                                         20)
+                      (interval.set/erase 5
+                                          17))))
+          "STARTS (multi-segment)")))
+
+
+
+
 (t/deftest mark
 
   (t/is (= (seq (sorted-set [5 10]))
