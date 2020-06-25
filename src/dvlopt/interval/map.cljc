@@ -2,7 +2,7 @@
 
   ""
 
-  ;; Cf. http://clj-me.cgrand.net/2012/03/16/a-poor-mans-interval-tree/
+  ;; Cf. http://clj-me.cgrand.net/2012/03/16/a-poor-mans-interval-imap/
   ;;     https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
 
   {:author "Adam Helinski"}
@@ -16,16 +16,39 @@
 ;;;;;;;;;; Marking intervals
 
 
+(defn- -merge-left?
+
+  ;;
+
+  [imap from values]
+
+  (when-not values
+    (let [[[from-left
+            to-left
+            :as segment-left]
+           values-left]       (first (rsubseq imap
+                                              >= nil
+                                              <  from))]
+      (when (and values-left
+                 (= to-left
+                    from)
+                 (= values-left
+                    values))
+        [from-left to-left]))))
+
+
+
+
 (defn- -mark-merge-left
 
-  ;; Former `-mark-join-pre`
+  ;;
 
-  [tree from to values]
+  [imap from to values]
 
   (let [[[from-left
           to-left
           :as segment-left]
-         values-left]       (first (rsubseq tree
+         values-left]       (first (rsubseq imap
                                              >= nil
                                              <  from))]
     (if (and values-left
@@ -33,11 +56,11 @@
                 from)
              (= values-left
                 values))
-      (-> tree
+      (-> imap
           (dissoc segment-left)
           (assoc [from-left to]
                  values))
-      (assoc tree
+      (assoc imap
              [from to]
              values))))
 
@@ -46,7 +69,7 @@
 
   ;;
 
-  [tree from to values segments]
+  [imap from to values segments]
 
   (let [[[from-right
           to-right
@@ -57,11 +80,11 @@
                 from-right)
              (= values-right
                 values))
-      (-> tree
+      (-> imap
           (dissoc segment-right)
           (assoc [from to-right]
                  values))
-      (assoc tree
+      (assoc imap
              [from to]
              values))))
 
@@ -69,9 +92,9 @@
 
 (defn- -mark-merge
 
-  ;; Former `-mark-join`
+  ;;
 
-  [tree from to values segments]
+  [imap from to values segments]
 
   (let [[[from-right
           to-right
@@ -82,12 +105,12 @@
                 from-right)
              (= values-right
                 values))
-      (-mark-merge-left (dissoc tree
+      (-mark-merge-left (dissoc imap
                                 segment-right)
                         from
                         to-right
                         values)
-      (-mark-merge-left tree
+      (-mark-merge-left imap
                         from
                         to
                         values))))
@@ -98,23 +121,23 @@
 
   ;;
 
-  [tree from-acc to-acc values-acc assoc-acc? from to values]
+  [imap from-acc to-acc values-acc assoc-acc? from to values]
 
   (if (and (= to-acc
               from)
            (= values-acc
               values))
     (assoc (if assoc-acc?
-             tree
-             (dissoc tree
+             imap
+             (dissoc imap
                      [from-acc to-acc]))
            [from-acc to]
            values)
     (assoc (if assoc-acc?
-             (assoc tree
+             (assoc imap
                     [from-acc to-acc]
                     values-acc)
-             tree)
+             imap)
            [from to]
            values)))
 
@@ -122,9 +145,9 @@
 
 (defn- -markloop-merge-right
 
-  ;;
+  ;; TODO. Refactor, now identical to [[-mark-merge-right]]
 
-  [tree from to values segments]
+  [imap from to values segments]
 
   (let [[[from-right
           to-right
@@ -135,12 +158,12 @@
                 from-right)
              (= values-right
                 values))
-      (-> tree
+      (-> imap
           (dissoc segment-right)
-          (assoc tree
+          (assoc imap
                  [from to-right]
                  values))
-      (assoc tree
+      (assoc imap
              [from to]
              values))))
 
@@ -150,25 +173,25 @@
 
   ;;
 
-  [tree from-acc to-acc values-acc assoc-acc? from to values segments]
+  [imap from-acc to-acc values-acc assoc-acc? from to values segments]
 
   (if (and (= to-acc
               from)
            (= values-acc
               values))
     (-markloop-merge-right (if assoc-acc?
-                             tree
-                             (dissoc tree
+                             imap
+                             (dissoc imap
                                      [from-acc to-acc]))
                            from-acc
                            to
                            values
                            segments)
     (-markloop-merge-right (if assoc-acc?
-                             (assoc tree
+                             (assoc imap
                                     [from-acc to-acc]
                                     values-acc)
-                             tree)
+                             imap)
                            from
                            to
                            values
@@ -180,7 +203,7 @@
 
   ;;
 
-  [tree from-2 to value from-acc to-acc values-acc assoc-acc? [[[from-seg
+  [imap from-2 to value from-acc to-acc values-acc assoc-acc? [[[from-seg
                                                                  to-seg
                                                                  :as segment]
                                                                 values] 
@@ -189,7 +212,7 @@
   (if (or (nil? segment)
           (interval.util/disjoint? to
                                    from-seg))
-    (-markloop-merge-left tree
+    (-markloop-merge-left imap
                           from-acc
                           to-acc
                           values-acc
@@ -205,7 +228,7 @@
                                     to-seg)
           (if (= (count values)
                  1)
-            (-markloop-merge-left (dissoc tree
+            (-markloop-merge-left (dissoc imap
                                           segment)
                                   from-acc
                                   to-acc
@@ -214,7 +237,7 @@
                                   from-2
                                   to-seg
                                   values)
-            (-markloop-merge-left tree
+            (-markloop-merge-left imap
                                   from-acc
                                   to-acc
                                   values-acc
@@ -228,11 +251,11 @@
                         from-2)
                      (= values-acc
                         values))
-              (recur (let [tree-2 (dissoc tree
+              (recur (let [imap-2 (dissoc imap
                                           segment)]
                        (if assoc-acc?
-                         tree-2
-                         (dissoc tree-2
+                         imap-2
+                         (dissoc imap-2
                                  [from-acc to-acc])))
                      to-seg
                      to
@@ -242,13 +265,13 @@
                      values
                      true
                      segments)
-              (recur (let [tree-2 (dissoc tree
+              (recur (let [imap-2 (dissoc imap
                                           segment)]
                        (if assoc-acc?
-                         (assoc tree-2
+                         (assoc imap-2
                                 [from-acc to-acc]
                                 values-acc)
-                         tree-2))
+                         imap-2))
                      to-seg
                      to
                      value
@@ -257,7 +280,7 @@
                      values
                      true
                      segments))
-            (recur (-markloop-merge-left tree
+            (recur (-markloop-merge-left imap
                                          from-acc
                                          to-acc
                                          values-acc
@@ -276,7 +299,7 @@
         (if (interval.util/point<=+ to
                                     to-seg)
           ;; TODO. Might not need to potentially merge left if `assoc-acc?` is true?
-          (-markloop-merge-left tree
+          (-markloop-merge-left imap
                                 from-acc
                                 to-acc
                                 values-acc
@@ -288,11 +311,11 @@
                       from-2)
                    (= values-acc
                       values))
-            (recur (let [tree-2 (dissoc tree
+            (recur (let [imap-2 (dissoc imap
                                         segment)]
                      (if assoc-acc?
-                       tree-2
-                       (dissoc tree-2
+                       imap-2
+                       (dissoc imap-2
                                [from-acc to-acc])))
                    to-seg
                    to
@@ -303,9 +326,10 @@
                    true
                    segments)
             (recur (if assoc-acc?
-                     (assoc tree
-                            [from-acc to-acc])
-                     tree)
+                     (assoc imap
+                            [from-acc to-acc]
+                            values-acc)
+                     imap)
                    to-seg
                    to
                    value
@@ -316,7 +340,7 @@
                    segments))))
       (cond
         (= to
-           from-seg) (-markloop-merge-left tree
+           from-seg) (-markloop-merge-left imap
                                            from-acc
                                            to-acc
                                            values-acc
@@ -327,7 +351,7 @@
         (= from-2
            from-seg) (if (interval.util/point<+ to
                                                 to-seg)
-                       (-> tree
+                       (-> imap
                            (dissoc segment)
                            (assoc [to to-seg]
                                   values)
@@ -341,7 +365,7 @@
                                                        value)))
                        (if (= to
                               to-seg)
-                         (-markloop-merge (dissoc tree
+                         (-markloop-merge (dissoc imap
                                                   segment)
                                           from-acc
                                           to-acc
@@ -356,11 +380,11 @@
                                               value)]
                            (if (= values-acc
                                   values-2)
-                             (recur (let [tree-2 (dissoc tree
+                             (recur (let [imap-2 (dissoc imap
                                                          segment)]
                                       (if assoc-acc?
-                                        tree-2
-                                        (dissoc tree
+                                        imap-2
+                                        (dissoc imap
                                                 [from-acc to-acc])))
                                     to-seg
                                     to
@@ -370,12 +394,12 @@
                                     values-2
                                     true
                                     segments)
-                             (recur (let [tree-2 (dissoc tree
+                             (recur (let [imap-2 (dissoc imap
                                                          segment)]
                                       (if assoc-acc?
-                                        (assoc tree-2
+                                        (assoc imap-2
                                                [from-acc to-acc] values-acc)
-                                        tree-2))
+                                        imap-2))
                                     to-seg
                                     to
                                     value
@@ -384,7 +408,7 @@
                                     values-2
                                     true
                                     segments)))))
-        :else         (let [tree-2 (-> tree
+        :else         (let [imap-2 (-> imap
                                        (dissoc segment)
                                        (-markloop-merge-left from-acc
                                                              to-acc
@@ -395,19 +419,19 @@
                                                              #{value}))]
                        (if (interval.util/point<+ to
                                                   to-seg)
-                         (assoc tree-2
+                         (assoc imap-2
                                 [from-seg to] (conj values
                                                     value)
                                 [to to-seg]   values)
                          (if (= to
                                 to-seg)
-                           (-mark-merge-right tree-2
+                           (-mark-merge-right imap-2
                                               from-seg
                                               to-seg
                                               (conj values
                                                     value)
                                               segments)
-                           (recur tree-2
+                           (recur imap-2
                                   to-seg
                                   to
                                   value
@@ -427,18 +451,18 @@
   ;; A bit fugly and handcrafted, but does the job efficiently as it minimizes looping and hitting
   ;; the sorted-map, while preserving from unnecessary fragmentation.
 
-  [tree from to value]
+  [imap from to value]
 
   (let [[[[from-seg
            to-seg
            :as segment]
           values] 
-         & segments]    (subseq tree
+         & segments]    (subseq imap
                                 >= from)]
     (if (or (nil? segment)
             (interval.util/disjoint? to
                                      from-seg))
-      (-mark-merge-left tree
+      (-mark-merge-left imap
                         from
                         to
                         #{value})
@@ -451,12 +475,12 @@
                                       to-seg)
             (if (= (count values)
                    1)
-              (-mark-merge-left (dissoc tree
+              (-mark-merge-left (dissoc imap
                                         segment)
                                 from
                                 to-seg
                                 values)
-              (-mark-merge-left tree
+              (-mark-merge-left imap
                                 from
                                 from-seg
                                 #{value}))
@@ -465,7 +489,7 @@
               (let [[[from-left
                       to-left
                       :as segment-left]
-                     values-left]       (first (rsubseq tree
+                     values-left]       (first (rsubseq imap
                                                          >= nil
                                                          <  from))]
                 (if (and values-left
@@ -473,7 +497,7 @@
                             from)
                          (= values-left
                             values))
-                  (-mark-rest (dissoc tree
+                  (-mark-rest (dissoc imap
                                       segment-left
                                       segment)
                               to-seg
@@ -484,7 +508,7 @@
                               values
                               true
                               segments)
-                  (-mark-rest (dissoc tree
+                  (-mark-rest (dissoc imap
                                       segment)
                               to-seg
                               to
@@ -494,7 +518,7 @@
                               values
                               true
                               segments)))
-              (-mark-rest (-mark-merge-left tree
+              (-mark-rest (-mark-merge-left imap
                                             from
                                             from-seg
                                             #{value})
@@ -508,8 +532,8 @@
                           segments)))
           (if (interval.util/point<=+ to
                                       to-seg)
-            tree
-            (-mark-rest tree
+            imap
+            (-mark-rest imap
                         to-seg
                         to
                         value
@@ -521,14 +545,14 @@
         ;; Found segment does not contain target value
         (cond
           (= to
-             from-seg)        (-mark-merge-left tree
+             from-seg)        (-mark-merge-left imap
                                                 from
                                                 to
                                                 #{value})
           (= from
              from-seg)        (if (interval.util/point<+ to
                                                          to-seg)
-                                (-mark-merge-left (-> tree
+                                (-mark-merge-left (-> imap
                                                       (dissoc segment)
                                                       (assoc [to to-seg]
                                                              values))
@@ -538,7 +562,7 @@
                                                         value))
                                 (if (= to
                                        to-seg)
-                                  (-mark-merge (dissoc tree
+                                  (-mark-merge (dissoc imap
                                                        segment)
                                                from-seg
                                                to-seg
@@ -548,7 +572,7 @@
                                   (let [[[from-left
                                           to-left
                                           :as segment-left]
-                                         values-left]       (first (rsubseq tree
+                                         values-left]       (first (rsubseq imap
                                                                              >= nil
                                                                              <  from))]
                                     (let [values-2 (conj values
@@ -558,7 +582,7 @@
                                                   from)
                                                (= values-left
                                                   values-2))
-                                        (-mark-rest (dissoc tree
+                                        (-mark-rest (dissoc imap
                                                             segment-left
                                                             segment)
                                                     to-seg
@@ -569,7 +593,7 @@
                                                     values-2
                                                     true
                                                     segments)
-                                        (-mark-rest (dissoc tree
+                                        (-mark-rest (dissoc imap
                                                             segment)
                                                     to-seg
                                                     to
@@ -582,26 +606,26 @@
                                                     segments))))))
           (interval.util/point<-
             from       
-            from-seg)         (let [tree-2 (-mark-merge-left (dissoc tree
+            from-seg)         (let [imap-2 (-mark-merge-left (dissoc imap
                                                                      segment)
                                                              from
                                                              from-seg
                                                              #{value})]
                                 (if (interval.util/point<+ to
                                                            to-seg)
-                                  (assoc tree-2
+                                  (assoc imap-2
                                          [from-seg to] (conj values
                                                              value)
                                          [to to-seg]   values)
                                   (if (= to
                                          to-seg)
-                                    (-mark-merge-right tree-2
+                                    (-mark-merge-right imap-2
                                                        from-seg
                                                        to-seg
                                                        (conj values
                                                              value)
                                                        segments)
-                                    (-mark-rest tree-2
+                                    (-mark-rest imap-2
                                                 to-seg
                                                 to
                                                 value
@@ -611,25 +635,25 @@
                                                       value)
                                                 true
                                                 segments))))
-          :else               (let [tree-2 (-> tree
+          :else               (let [imap-2 (-> imap
                                                (dissoc segment)
                                                (assoc [from-seg from]
                                                       values))]
                                 (if (interval.util/point<+ to
                                                            to-seg)
-                                  (assoc tree-2
+                                  (assoc imap-2
                                          [from to]   (conj values
                                                            value)
                                          [to to-seg] values)
                                   (if (= to
                                          to-seg)
-                                    (-mark-merge-right tree-2
+                                    (-mark-merge-right imap-2
                                                        from
                                                        to
                                                        (conj values
                                                              value)
                                                        segments)
-                                    (-mark-rest tree-2
+                                    (-mark-rest imap-2
                                                 to-seg
                                                 to
                                                 value
@@ -644,18 +668,142 @@
 ;;;;;;;;;; Erasing intervals
 
 
+(defn- -erase-merge-left
+
+  ;;
+
+  [imap from to values]
+
+  (if (empty? values)
+    imap
+    (-mark-merge-left imap
+                      from
+                      to
+                      values)))
+
+ 
+
+(defn- -erase-merge-right
+
+  ;;
+
+  [imap from to values segments]
+
+  (println :erase-merge-right [from to] values)
+  (if (empty? values)
+    imap
+    (-mark-merge-right imap
+                       from
+                       to
+                       values
+                       segments)))
+
+
+
+(defn- -erase-merge
+
+  ;;
+
+  [imap from to values segments]
+
+  (if (empty? values)
+    imap
+    (-mark-merge imap
+                 from
+                 to
+                 values
+                 segments)))
+
+ 
+
+
+
+(defn- -eraseloop-acc
+
+  ;;
+
+  [imap from-acc to-acc values-acc assoc-acc?]
+
+  (if (and values-acc
+           assoc-acc?)
+    (assoc imap
+           [from-acc to-acc]
+           values-acc)
+    imap))
+
+
+
+
+(defn- -eraseloop-merge-left
+
+  ;;
+
+  [imap from-acc to-acc values-acc assoc-acc? from to values]
+
+  (if (empty? values)
+    (if (and values-acc
+             assoc-acc?)
+      (assoc imap
+             [from-acc to-acc]
+             values-acc)
+      imap)
+    (if values-acc
+      (-markloop-merge-left imap
+                            from-acc
+                            to-acc
+                            values-acc
+                            assoc-acc?
+                            from
+                            to
+                            values)
+      imap)))
+
+
+
+(defn- -eraseloop-merge
+
+  ;;
+
+  [imap from-acc to-acc values-acc assoc-acc? from to values segments]
+
+
+  (println :eraseloop-merge imap from-acc to-acc values-acc assoc-acc? from to values segments)
+  (if (empty? values)
+    (if assoc-acc?
+      (assoc imap
+             [from-acc to-acc]
+             values-acc)
+      imap)
+    (if values-acc
+      (-markloop-merge imap
+                       from-acc
+                       to-acc
+                       values-acc
+                       assoc-acc? from
+                       to
+                       values
+                       segments)
+      imap)))
+
+
+
+
+
+
+
+
 (defn- -erase-value
 
   ;;
 
-  [tree segment values value]
+  [imap segment values value]
 
   (let [values-2 (disj values
                        value)]
     (if (empty? values-2)
-      (dissoc tree
+      (dissoc imap
               segment)
-      (assoc tree
+      (assoc imap
              segment
              values-2))))
 
@@ -665,65 +813,180 @@
 
   ;;
 
-  [tree segment values value]
+  [imap segment values value]
 
   (let [values-2 (disj values
                        value)]
     (if (empty? values-2)
-      tree
-      (assoc tree
+      imap
+      (assoc imap
              segment
              values-2))))
 
 
 
-(defn- -erase-segments
+(defn- -erase-rest
 
   ;; Used by [[erase]].
   ;;
-  ;; Behaves very much like [[erase]] but optimizes the algorithm is not dealing with the first
+  ;; Behaves very much like [[erase]] but optimizes the algorithm as it is not dealing with the first
   ;; segment anymore. Is pretty much a copy/paste, but the recursion and all the destructuring
   ;; make it not worth the trouble abstracting that away.
 
-  [value to tree [[[from-seg
-                    to-seg
-                    :as segment]
-                   values]
-                  & segments]]
+  [imap from-2 to value from-acc to-acc values-acc assoc-acc? [[[from-seg
+                                                                 to-seg
+                                                                 :as segment]
+                                                                values]
+                                                               & segments]]
 
+  (println :erase-rest from-2 to value [from-acc to-acc] values-acc assoc-acc? segment imap)
   (if (and segment
            (interval.util/overlapping? to
                                        from-seg))
     (if (contains? values
                    value)
-      (if (interval.util/point<+ to
-                                 to-seg)
-        (-restore-values (-> tree
-                             (dissoc segment)
-                             (assoc [to to-seg]
-                                    values))
-                         [from-seg to]
-                         values
-                         value)
-        (let [tree-2 (-erase-value tree
-                                   segment
-                                   values
-                                   value)]
+      (if (interval.util/point<- from-2
+                                 from-seg)
+        (if (interval.util/point<+ to
+                                   to-seg)
+          (-> imap
+              (dissoc segment)
+              (assoc [to to-seg]
+                     values)
+              (-eraseloop-acc from-acc
+                              to-acc
+                              values-acc
+                              assoc-acc?)
+              (-restore-values [from-seg to]
+                               values
+                               value))
           (if (= to
                  to-seg)
-            tree-2
-            (recur value
+            (-> imap
+                (-eraseloop-acc from-acc
+                                to-acc
+                                values-acc
+                                assoc-acc?)
+                (-erase-merge-right from-seg
+                                    to-seg
+                                    (disj values
+                                          value)
+                                    segments))
+            (recur (-> imap
+                       (dissoc segment)
+                       (-eraseloop-acc from-acc
+                                       to-acc
+                                       values-acc
+                                       assoc-acc?))
+                   to-seg
                    to
-                   tree-2
-                   segments))))
-      (if (interval.util/point<=+ to
-                                  to-seg)
-        tree
-        (recur value
-               to
-               tree
-               segments)))
-    tree))
+                   value
+                   from-seg
+                   to-seg
+                   (not-empty (disj values
+                                    value))
+                   true
+                   segments)))
+        ;; (= from-seg to-seg)
+        (if (interval.util/point<+ to
+                                   to-seg)
+          (-eraseloop-merge-left (-> imap
+                                     (dissoc segment)
+                                     (assoc [to to-seg]
+                                            values))
+                                 from-acc
+                                 to-acc
+                                 values-acc
+                                 assoc-acc?
+                                 from-seg
+                                 to
+                                 (disj values
+                                       value))
+          (if (= to
+                 to-seg)
+            (-eraseloop-merge (dissoc imap
+                                      segment)
+                              from-acc
+                              to-acc
+                              values-acc
+                              assoc-acc?
+                              from-2
+                              to-seg
+                              (disj values
+                                    value)
+                              segments)
+            (let [values-2 (not-empty (disj values
+                                            value))]
+              (if values-2
+                (if (and values-acc
+                         (= to-acc
+                            from-2)
+                         (= values-acc
+                            values-2))
+                  (recur (let [imap-2 (dissoc imap
+                                              segment)]
+                           (if assoc-acc?
+                             (dissoc imap-2
+                                     [from-acc to-acc])
+                             imap-2))
+                         to-seg
+                         to
+                         value
+                         from-acc
+                         to-seg
+                         values-2
+                         true
+                         segments)
+                  (recur (-> imap
+                             (dissoc segment)
+                             (-eraseloop-acc from-acc
+                                             to-acc
+                                             values-acc
+                                             assoc-acc?))
+                         to-seg
+                         to
+                         value
+                         from-seg
+                         to-seg
+                         values-2
+                         true
+                         segments))
+                (recur (-> imap
+                           (dissoc segment)
+                           (-eraseloop-acc from-acc
+                                           to-acc
+                                           values-acc
+                                           assoc-acc?))
+                       to-seg
+                       to
+                       value
+                       from-seg
+                       to-seg
+                       values-2
+                       true
+                       segments))))))
+      (let [imap-2 (-eraseloop-acc imap
+                                   from-acc
+                                   to-acc
+                                   values-acc
+                                   assoc-acc?)]
+        (if (interval.util/point<=+ to
+                                    to-seg)
+          imap-2
+          (recur imap-2
+                 to-seg
+                 to
+                 value
+                 from-seg
+                 to-seg
+                 values
+                 false
+                 segments))))
+    (-eraseloop-acc imap
+                    from-acc
+                    to-acc
+                    values-acc
+                    assoc-acc?)))
 
 
 
@@ -731,14 +994,15 @@
 
   ""
 
-  [tree from to value]
+  [imap from to value]
 
   (let [[[[from-seg
            to-seg
            :as segment]
           values]
-         & segments]    (subseq tree
+         & segments]    (subseq imap
                                 >= from)]
+    (println :erase [from to] value segment)
     (if (and segment
              (interval.util/overlapping? to
                                          from-seg))
@@ -748,55 +1012,130 @@
                                     from-seg)
           (if (interval.util/point<+ to
                                      to-seg)
-            (-restore-values (-> tree
+            (-restore-values (-> imap
                                  (dissoc segment)
                                  (assoc [to to-seg]
                                         values))
                              [from-seg to]
                              values
                              value)
-            (let [tree-2 (-erase-value tree
-                                       segment
-                                       values
-                                       value)]
-              (if (= to
-                     to-seg)
-                tree-2
-                (-erase-segments value
-                                 to
-                                 tree-2
-                                 segments))))
-          (let [tree-2 (-> tree
-                           (dissoc segment)
-                           (assoc [from-seg from]
-                                  values))]
+            (if (= to
+                   to-seg)
+              (-erase-merge-right (dissoc imap
+                                          segment)
+                                  from-seg
+                                  to-seg
+                                  (disj values
+                                        value)
+                                  segments)
+              (-erase-rest (dissoc imap
+                                   segment)
+                           to-seg
+                           to
+                           value
+                           from-seg
+                           to-seg
+                           (not-empty (disj values
+                                            value))
+                           true
+                           segments)))
+          (if (= from
+                 from-seg)
             (if (interval.util/point<+ to
                                        to-seg)
-              (-restore-values (assoc tree-2
-                                      [to to-seg]
-                                      values)
+              (-erase-merge-left (-> imap
+                                     (dissoc segment)
+                                     (assoc [to to-seg]
+                                            values))
+                                 from
+                                 to
+                                 (disj values
+                                       value))
+              (if (= to
+                     to-seg)
+                (-erase-merge (dissoc segment
+                                      segment)
+                              from
+                              to
+                              (disj values
+                                    value)
+                              segments)
+                (let [values-2 (not-empty (disj values
+                                                value))]
+                  (if-some [[from-left
+                             _to-left
+                             :as segment-left] (-merge-left? imap
+                                                             from
+                                                             values-2)]
+                    (-erase-rest (dissoc imap
+                                         segment
+                                         segment-left)
+                                 to-seg
+                                 to
+                                 value
+                                 from-left
+                                 to-seg
+                                 values-2
+                                 true
+                                 segments)
+                    (-erase-rest (dissoc imap
+                                         segment)
+                                 to-seg
+                                 to
+                                 value
+                                 from-seg
+                                 to-seg
+                                 values-2
+                                 true
+                                 segments)))))
+            (if (interval.util/point<+ to
+                                       to-seg)
+              (-restore-values (-> imap
+                                   (dissoc segment)
+                                   (assoc [from-seg from]
+                                          values)
+                                   (assoc [to to-seg]
+                                          values))
                                [from to]
                                values
                                value)
-              (let [tree-3 (-restore-values tree-2
-                                            [from to-seg]
-                                            values
-                                            value)]
-                (if (= to
-                       to-seg)
-                  tree-3
-                  (-erase-segments value
-                                   to
-                                   tree-3
-                                   segments))))))
+              (if (= to
+                     to-seg)
+                (-erase-merge-right (-> imap
+                                        (dissoc segment)
+                                        (assoc [from-seg from]
+                                               values))
+                                    from
+                                    to-seg
+                                    (disj values
+                                          value)
+                                    segments)
+                (-erase-rest (-> imap
+                                 (dissoc segment)
+                                 (assoc [from-seg from]
+                                        values))
+                             to-seg
+                             to
+                             value
+                             from
+                             to-seg
+                             (not-empty (disj values
+                                              value))
+                             true
+                             segments)))))
         (if (interval.util/point<=+ to
                                     to-seg)
-          tree
-          (-erase-segments value
-                           to
-                           tree
-                           segments)))
-      tree)))
+          imap
+          (-erase-rest imap
+                       to-seg
+                       to
+                       value
+                       from-seg
+                       to-seg
+                       values
+                       false
+                       segments)))
+      imap)))
 
 
 ;;;;;;;;;; Rest of public API

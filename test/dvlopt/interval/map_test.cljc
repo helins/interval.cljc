@@ -82,16 +82,16 @@
                                          10
                                          :x)))
              (seq (interval.map/erase imap
-                                       6
-                                       9
-                                  :x)))
+                                      6
+                                      9
+                                      :x)))
           "DURING erasing")
 
     (t/is (= (seq imap)
              (seq (interval.map/erase imap
-                                       0
-                                       3
-                                  :x)))
+                                      0
+                                      3
+                                      :x)))
           "< erasing")
 
     (t/is (= (seq imap)
