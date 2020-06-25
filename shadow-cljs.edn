@@ -3,6 +3,8 @@
   {:modules    {:main {:entries [cljs.user
                                  dvlopt.interval.map
                                  dvlopt.interval.map-test
+                                 dvlopt.interval.set
+                                 dvlopt.interval.set-test
                                  dvlopt.interval.util
                                  dvlopt.interval.util-test]}}
    :output-dir "public/js"
