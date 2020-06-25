@@ -9,6 +9,7 @@
 
   (:require [clojure.core         :as clj]
             [clojure.set          :as clj.set]
+            [dvlopt.interval.set  :as interval.set]
             [dvlopt.interval.util :as interval.util])
   (:refer-clojure :exclude [empty]))
 
@@ -1201,6 +1202,26 @@
 
 
 ;;;;;;;;;; Rest of public API
+
+
+(defn by-value
+
+  ""
+
+  [segments]
+
+  (reduce (fn update-isets [value->iset [[from to] values]]
+            (reduce (fn update-iset [value->iset-2 value]
+                      (update value->iset-2
+                              value
+                              (fnil interval.set/mark
+                                    interval.set/empty)
+                              from
+                              to))
+                    value->iset
+                    values))
+          {}
+          segments))
 
 
 (def empty

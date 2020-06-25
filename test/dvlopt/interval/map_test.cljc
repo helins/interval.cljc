@@ -8,12 +8,13 @@
 
   (:require [clojure.core        :as clj]
             [clojure.test        :as t]
-            [dvlopt.interval.map :as interval.map]))
+            [dvlopt.interval.map :as interval.map]
+            [dvlopt.interval.set :as interval.set]))
 
 
 ;; TODO. Open intervals
 
-;;;;;;;;;;
+;;;;;;;;;; Marking and erasing
 
 
 (t/deftest mark-init
@@ -1734,71 +1735,6 @@
 
 
 
-(t/deftest union
-
-  (let [imap (-> interval.map/empty
-                 (interval.map/mark 0
-                                    15
-                                    :a)
-                 (interval.map/mark 12
-                                    nil
-                                    :b)
-                 (interval.map/mark 20
-                                    25
-                                    :c)
-                 (interval.map/mark 30
-                                    nil
-                                    :d)
-                 (interval.map/mark 35
-                                    40
-                                    :e)
-                 (interval.map/mark nil
-                                    0
-                                    :f))]
-
-    (t/is (= #{:b
-               :d
-               :e}
-             (interval.map/union (subseq imap
-                                         >= 26))
-             (interval.map/union (subseq imap
-                                         >= 26
-                                         <  45))
-             (interval.map/union (subseq imap
-                                         >= 26
-                                         <= 35)))
-          "Equivalent unions given current state of imap")
-
-    (t/is (= #{:b
-               :d
-               :e}
-             (interval.map/union (rsubseq imap
-                                          >= 26))
-             (interval.map/union (rsubseq imap
-                                          >= 26
-                                          <  45))
-             (interval.map/union (rsubseq imap
-                                          >= 26
-                                          <= 35)))
-          "Using reverse segment querying does not change anything")
-
-    (t/is (= #{:b
-               :d}
-             (interval.map/union (subseq imap
-                                         >= 1000000))
-             (interval.map/union (rsubseq imap
-                                          >= 1000000)))
-          "Union of values at intervals with half-open ends")
-
-    (t/is (= #{:f}
-             (interval.map/union (subseq imap
-                                         < 0))
-             (interval.map/union (rsubseq imap
-                                          < 0)))
-          "Union of values at intervals with half-open starts")))
-
-
-
 (t/deftest mark-rest-defrag
 
   ;; Additional defragmentation tests when marking over several segments.
@@ -2176,3 +2112,95 @@
                                         17
                                         :x))))
         "Gap in between segments, acc is re-assoced"))
+
+
+;;;;;;;;;; Rest of the API
+
+
+(t/deftest by-value
+
+  (let [imap     (-> interval.map/empty
+                     (interval.map/mark 0
+                                        20
+                                        :a)
+                     (interval.map/mark 10
+                                        15
+                                        :b)
+                     (interval.map/mark 25
+                                        30
+                                        :b)
+                     (interval.map/mark 50
+                                        100
+                                        :a))
+        by-value (interval.map/by-value imap)]
+    (t/is (= (seq (sorted-set [0 20]
+                              [50 100]))
+             (seq (:a by-value))))
+    (t/is (= (seq (sorted-set [10 15]
+                              [25 30]))
+             (seq (:b by-value))))))
+
+           
+
+(t/deftest union
+
+  (let [imap (-> interval.map/empty
+                 (interval.map/mark 0
+                                    15
+                                    :a)
+                 (interval.map/mark 12
+                                    nil
+                                    :b)
+                 (interval.map/mark 20
+                                    25
+                                    :c)
+                 (interval.map/mark 30
+                                    nil
+                                    :d)
+                 (interval.map/mark 35
+                                    40
+                                    :e)
+                 (interval.map/mark nil
+                                    0
+                                    :f))]
+
+    (t/is (= #{:b
+               :d
+               :e}
+             (interval.map/union (subseq imap
+                                         >= 26))
+             (interval.map/union (subseq imap
+                                         >= 26
+                                         <  45))
+             (interval.map/union (subseq imap
+                                         >= 26
+                                         <= 35)))
+          "Equivalent unions given current state of imap")
+
+    (t/is (= #{:b
+               :d
+               :e}
+             (interval.map/union (rsubseq imap
+                                          >= 26))
+             (interval.map/union (rsubseq imap
+                                          >= 26
+                                          <  45))
+             (interval.map/union (rsubseq imap
+                                          >= 26
+                                          <= 35)))
+          "Using reverse segment querying does not change anything")
+
+    (t/is (= #{:b
+               :d}
+             (interval.map/union (subseq imap
+                                         >= 1000000))
+             (interval.map/union (rsubseq imap
+                                          >= 1000000)))
+          "Union of values at intervals with half-open ends")
+
+    (t/is (= #{:f}
+             (interval.map/union (subseq imap
+                                         < 0))
+             (interval.map/union (rsubseq imap
+                                          < 0)))
+          "Union of values at intervals with half-open starts")))
