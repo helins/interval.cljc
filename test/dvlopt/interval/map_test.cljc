@@ -594,9 +594,9 @@
                                          10
                                          :y)))
              (seq (interval.map/erase imap
-                                       7
-                                       10
-                                       :x))
+                                      7
+                                      10
+                                      :x))
              (seq (interval.map/erase imap
                                       7
                                       15
@@ -1799,7 +1799,119 @@
 
 
 
-#_(t/deftest erase-defrag
+(t/deftest mark-rest-defrag
+
+  ;; Additional defragmentation tests when marking over several segments.
+
+  (let [imap (-> interval.map/empty
+                 (interval.map/mark 0
+                                    20
+                                    :x)
+                 (interval.map/mark 5
+                                    10
+                                    :y)
+                 (interval.map/mark 15
+                                    20
+                                    :y))]
+    (t/is (= (seq (-> interval.map/empty
+                      (interval.map/mark 0
+                                         20
+                                         :x)
+                      (interval.map/mark 5
+                                         20
+                                         :y)))
+             (seq (interval.map/mark imap
+                                     10
+                                     15
+                                     :y))
+             (seq (interval.map/mark imap
+                                     7
+                                     15
+                                     :y))
+             (seq (interval.map/mark imap
+                                     5
+                                     15
+                                     :y))
+             (seq (interval.map/mark imap
+                                     5
+                                     17
+                                     :y))
+             (seq (interval.map/mark imap
+                                     5
+                                     20
+                                     :y))
+             (seq (interval.map/mark imap
+                                     7
+                                     17
+                                     :y))
+             (seq (interval.map/mark imap
+                                     7
+                                     20
+                                     :y)))
+          "Adjacent segments"))
+
+  (let [imap (-> interval.map/empty
+                 (interval.map/mark 5
+                                    10
+                                    :x)
+                 (interval.map/mark 15
+                                    30
+                                    :x)
+                 (interval.map/mark 15
+                                    20
+                                    :y))]
+    (t/is (= (seq (-> interval.map/empty
+                      (interval.map/mark 5
+                                         30
+                                         :x)
+                      (interval.map/mark 15
+                                         20
+                                         :y)))
+             (seq (interval.map/mark imap
+                                     5
+                                     15
+                                     :x))
+             (seq (interval.map/mark imap
+                                     5
+                                     17
+                                     :x))
+             (seq (interval.map/mark imap
+                                     5
+                                     20
+                                     :x))
+             (seq (interval.map/mark imap
+                                     5
+                                     25
+                                     :x))
+             (seq (interval.map/mark imap
+                                     5
+                                     30
+                                     :x))
+             (seq (interval.map/mark imap
+                                     7
+                                     15
+                                     :x))
+             (seq (interval.map/mark imap
+                                     7
+                                     17
+                                     :x))
+             (seq (interval.map/mark imap
+                                     7
+                                     20
+                                     :x))
+             (seq (interval.map/mark imap
+                                     7
+                                     25
+                                     :x))
+             (seq (interval.map/mark imap
+                                     7
+                                     30
+                                     :x)))
+          "Non-adjacent segments")))
+
+
+
+(t/deftest erase-defrag
 
   (t/is (= (seq (interval.map/mark interval.map/empty
                                    0
@@ -1815,4 +1927,252 @@
                     (interval.map/erase 5
                                         10
                                         :y))))
-        "Erasing defragments by merging adjacent equal values"))
+        "Left merge")
+
+  (t/is (= (seq (interval.map/mark interval.map/empty
+                                   0
+                                   10
+                                   :x))
+           (seq (-> interval.map/empty
+                    (interval.map/mark 0
+                                       10
+                                       :x)
+                    (interval.map/mark 0
+                                       5
+                                       :y)
+                    (interval.map/erase 0
+                                        5
+                                        :y))))
+        "Right merge")
+
+
+  (t/is (= (seq (interval.map/mark interval.map/empty
+                                   0
+                                   10
+                                   :x))
+           (seq (-> interval.map/empty
+                    (interval.map/mark 0
+                                       10
+                                       :x)
+                    (interval.map/mark 5
+                                       10
+                                       :y)
+                    (interval.map/erase 5
+                                        10
+                                        :y))))
+        "Merge")
+
+  (let [imap (-> interval.map/empty
+                 (interval.map/mark 0
+                                    10
+                                    :x)
+                 (interval.map/mark 5
+                                    10
+                                    :y))]
+    (t/is (= (seq (interval.map/mark interval.map/empty
+                                     0
+                                     10
+                                     :x))
+             (seq (interval.map/erase imap
+                                      0
+                                      10
+                                      :y))
+             (seq (interval.map/erase imap
+                                      nil
+                                      10
+                                      :y))
+             (seq (interval.map/erase imap
+                                      3
+                                      10
+                                      :y))
+             (seq (interval.map/erase imap
+                                      0
+                                      15
+                                      :y))
+             (seq (interval.map/erase imap
+                                      0
+                                      nil
+                                      :y)))
+          "Merge left (multi-segment)")
+
+    (let [imap-2 (interval.map/mark imap
+                                    2
+                                    3
+                                    :y)]
+      (t/is (= (seq (interval.map/mark interval.map/empty
+                                       0
+                                       10
+                                       :x))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        nil
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        nil
+                                        :y)))
+            "Merge left (multi-segment)"))
+
+    (let [imap-2 (-> imap
+                     (interval.map/mark 2
+                                        3
+                                        :y)
+                     (interval.map/mark 10
+                                        20
+                                        :x))]
+      (t/is (= (seq (interval.map/mark interval.map/empty
+                                       0
+                                       20
+                                       :x))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        20
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        25
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        0
+                                        nil
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        15
+                                        :y));
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        20
+                                        :y));
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        25
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        nil
+                                        nil
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        15
+                                        :y));
+               (seq (interval.map/erase imap-2
+                                        1
+                                        20
+                                        :y));
+               (seq (interval.map/erase imap-2
+                                        1
+                                        25
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        1
+                                        nil
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        10
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        15
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        20
+                                        :y))
+               (seq (interval.map/erase imap-2
+                                        2
+                                        25
+                                        :y))
+
+               (seq (interval.map/erase imap-2
+                                        2
+                                        nil
+                                        :y)))
+            "Merge (multi-segment, recurring further)")))
+
+
+  (t/is (= (seq (-> interval.map/empty
+                    (interval.map/mark 5
+                                       7
+                                       :y)
+                    (interval.map/mark 5
+                                       7
+                                       :x)
+                    (interval.map/mark 7
+                                       10
+                                       :y)
+                    (interval.map/mark 15
+                                       17
+                                       :y)
+                    (interval.map/mark 17
+                                       20
+                                       :x)
+                    (interval.map/mark 17
+                                       20
+                                       :y)))
+           (seq (-> interval.map/empty
+                    (interval.map/mark 5
+                                       10
+                                       :x)
+                    (interval.map/mark 5
+                                       10
+                                       :y)
+                    (interval.map/mark 15
+                                       20
+                                       :x)
+                    (interval.map/mark 15
+                                       20
+                                       :y)
+                    (interval.map/erase 7
+                                        17
+                                        :x))))
+        "Gap in between segments, acc is re-assoced"))

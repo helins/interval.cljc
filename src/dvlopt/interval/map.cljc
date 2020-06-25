@@ -13,6 +13,9 @@
   (:refer-clojure :exclude [empty]))
 
 
+;; TODO. Avoid unnecessary dissoc and re-assoc when using the merging helpers.
+
+
 ;;;;;;;;;; Marking intervals
 
 
@@ -22,7 +25,7 @@
 
   [imap from values]
 
-  (when-not values
+  (when values
     (let [[[from-left
             to-left
             :as segment-left]
@@ -160,8 +163,7 @@
                 values))
       (-> imap
           (dissoc segment-right)
-          (assoc imap
-                 [from to-right]
+          (assoc [from to-right]
                  values))
       (assoc imap
              [from to]
@@ -299,7 +301,8 @@
         (if (interval.util/point<=+ to
                                     to-seg)
           ;; TODO. Might not need to potentially merge left if `assoc-acc?` is true?
-          (-markloop-merge-left imap
+          (-markloop-merge-left (dissoc imap
+                                        segment)
                                 from-acc
                                 to-acc
                                 values-acc
@@ -384,7 +387,7 @@
                                                          segment)]
                                       (if assoc-acc?
                                         imap-2
-                                        (dissoc imap
+                                        (dissoc imap-2
                                                 [from-acc to-acc])))
                                     to-seg
                                     to
@@ -689,7 +692,6 @@
 
   [imap from to values segments]
 
-  (println :erase-merge-right [from to] values)
   (if (empty? values)
     imap
     (-mark-merge-right imap
@@ -766,8 +768,6 @@
 
   [imap from-acc to-acc values-acc assoc-acc? from to values segments]
 
-
-  (println :eraseloop-merge imap from-acc to-acc values-acc assoc-acc? from to values segments)
   (if (empty? values)
     (if assoc-acc?
       (assoc imap
@@ -839,7 +839,6 @@
                                                                 values]
                                                                & segments]]
 
-  (println :erase-rest from-2 to value [from-acc to-acc] values-acc assoc-acc? segment imap)
   (if (and segment
            (interval.util/overlapping? to
                                        from-seg))
@@ -926,9 +925,9 @@
                   (recur (let [imap-2 (dissoc imap
                                               segment)]
                            (if assoc-acc?
+                             imap-2
                              (dissoc imap-2
-                                     [from-acc to-acc])
-                             imap-2))
+                                     [from-acc to-acc])))
                          to-seg
                          to
                          value
@@ -965,23 +964,87 @@
                        values-2
                        true
                        segments))))))
-      (let [imap-2 (-eraseloop-acc imap
+      (if (interval.util/point<+ from-2
+                                 from-seg)
+        (let [imap-2 (-eraseloop-acc imap
+                                     from-acc
+                                     to-acc
+                                     values-acc
+                                     assoc-acc?)]
+          (if (interval.util/point<=+ to
+                                      to-seg)
+            imap-2
+            (recur imap-2
+                   to-seg
+                   to
+                   value
+                   from-seg
+                   to-seg
+                   values
+                   false
+                   segments)))
+        (if (interval.util/point<=+ to
+                                    to-seg)
+          (if (empty? values)
+              (if (and values-acc
+                       assoc-acc?)
+                (assoc imap
+                       [from-acc to-acc]
+                       values-acc)
+                imap)
+              (if values-acc
+                (-markloop-merge-left (dissoc imap
+                                              segment)
+                                      from-acc
+                                      to-acc
+                                      values-acc
+                                      assoc-acc?
+                                      from-seg
+                                      to-seg
+                                      values)
+                imap))
+
+          ; (-eraseloop-merge-left (dissoc imap
+          ;                                segment)
+          ;                        from-acc
+          ;                        to-acc
+          ;                        values-acc
+          ;                        assoc-acc?
+          ;                        from-seg
+          ;                        to-seg
+          ;                        values)
+          (if (and values-acc
+                   (= to-acc
+                      from-2)
+                   (= values-acc
+                      values))
+            (recur (let [imap-2 (dissoc imap
+                                        segment)]
+                     (if assoc-acc?
+                       imap-2
+                       (dissoc imap-2
+                               [from-acc to-acc])))
+                   to-seg
+                   to
+                   value
+                   from-acc
+                   to-seg
+                   values
+                   true
+                   segments)
+            (recur (-eraseloop-acc imap
                                    from-acc
                                    to-acc
                                    values-acc
-                                   assoc-acc?)]
-        (if (interval.util/point<=+ to
-                                    to-seg)
-          imap-2
-          (recur imap-2
-                 to-seg
-                 to
-                 value
-                 from-seg
-                 to-seg
-                 values
-                 false
-                 segments))))
+                                   assoc-acc?)
+                   to-seg
+                   to
+                   value
+                   from-seg
+                   to-seg
+                   values
+                   false
+                   segments)))))
     (-eraseloop-acc imap
                     from-acc
                     to-acc
@@ -1002,14 +1065,13 @@
           values]
          & segments]    (subseq imap
                                 >= from)]
-    (println :erase [from to] value segment)
     (if (and segment
              (interval.util/overlapping? to
                                          from-seg))
       (if (contains? values
                      value)
-        (if (interval.util/point<=- from
-                                    from-seg)
+        (if (interval.util/point<- from
+                                   from-seg)
           (if (interval.util/point<+ to
                                      to-seg)
             (-restore-values (-> imap
@@ -1053,7 +1115,7 @@
                                        value))
               (if (= to
                      to-seg)
-                (-erase-merge (dissoc segment
+                (-erase-merge (dissoc imap
                                       segment)
                               from
                               to

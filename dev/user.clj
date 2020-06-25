@@ -15,7 +15,7 @@
 (require '[nrepl.server])  (defonce server (nrepl.server/start-server :port 4000))
 
 
-(def m
+(def imap
      (-> interval.map/empty
          (interval.map/mark 0   15  :a)
          (interval.map/mark 12  nil :b)
