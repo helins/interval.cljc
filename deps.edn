@@ -26,9 +26,7 @@
    :main-opts ["-m" "deps-deploy.deps-deploy" "install" "interval.jar"]}
 
   :test
-  {:extra-deps  {com.cognitect/transit-clj  {:mvn/version "1.0.324"}
-                 com.cognitect/transit-cljs {:mvn/version "0.8.264"}
-                 lambdaisland/chui          {:mvn/version "0.0.117"}
+  {:extra-deps  {lambdaisland/chui          {:mvn/version "0.0.117"}
                  lambdaisland/kaocha        {:mvn/version "1.0-612"}
                  lambdaisland/kaocha-cljs   {:mvn/version "0.0-71"}}
    :extra-paths ["test"]}}}
