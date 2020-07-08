@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>dvlopt</groupId>
   <artifactId>interval</artifactId>
-  <version>0.0.0-beta0</version>
+  <version>0.0.0-beta1</version>
   <name>Interval</name>
   <description>Immutable interval trees and utilities</description>
   <url>https://github.com/dvlopt/interval.cljc</url>
