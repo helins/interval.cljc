@@ -1884,11 +1884,11 @@
 
   (t/is (= (seq (interval.map/mark interval.map/empty
                                    0
-                                   10
+                                   20
                                    :x))
            (seq (-> interval.map/empty
                     (interval.map/mark 0
-                                       10
+                                       20
                                        :x)
                     (interval.map/mark 5
                                        10
@@ -1897,6 +1897,24 @@
                                         10
                                         :y))))
         "Merge")
+
+
+  (t/is (= (seq (interval.map/mark interval.map/empty
+                                   15
+                                   25
+                                   :y))
+           (seq (-> interval.map/empty
+                    (interval.map/mark 10
+                                       20
+                                       :x)
+                    (interval.map/mark 15
+                                       25
+                                       :y)
+                    (interval.map/erase 10
+                                        20
+                                        :x))))
+        "Overlapping, merge left")
+
 
   (let [imap (-> interval.map/empty
                  (interval.map/mark 0

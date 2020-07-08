@@ -190,7 +190,8 @@
                            to
                            values
                            segments)
-    (-markloop-merge-right (if assoc-acc?
+    (-markloop-merge-right (if (and assoc-acc?
+                                    values-acc)
                              (assoc imap
                                     [from-acc to-acc]
                                     values-acc)
@@ -717,8 +718,6 @@
                  values
                  segments)))
 
- 
-
 
 
 (defn- -eraseloop-acc
@@ -733,7 +732,6 @@
            [from-acc to-acc]
            values-acc)
     imap))
-
 
 
 
@@ -770,26 +768,20 @@
   [imap from-acc to-acc values-acc assoc-acc? from to values segments]
 
   (if (empty? values)
-    (if assoc-acc?
+    (if (and assoc-acc?
+             values-acc)
       (assoc imap
              [from-acc to-acc]
              values-acc)
       imap)
-    (if values-acc
-      (-markloop-merge imap
-                       from-acc
-                       to-acc
-                       values-acc
-                       assoc-acc? from
-                       to
-                       values
-                       segments)
-      imap)))
-
-
-
-
-
+    (-markloop-merge imap
+                     from-acc
+                     to-acc
+                     values-acc
+                     assoc-acc? from
+                     to
+                     values
+                     segments)))
 
 
 
@@ -887,7 +879,7 @@
                                     value))
                    true
                    segments)))
-        ;; (= from-seg to-seg)
+        ;; Ie. (= from-seg to-seg)
         (if (interval.util/point<+ to
                                    to-seg)
           (-eraseloop-merge-left (-> imap
