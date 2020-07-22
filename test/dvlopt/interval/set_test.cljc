@@ -81,6 +81,24 @@
                                    10)))
         "Adding first interval")
 
+  (let [iset (interval.set/mark interval.set/empty
+                                10
+                                15)]
+    (t/is (= (seq iset)
+             (seq (interval.set/mark iset
+                                     10
+                                     15))
+             (seq (interval.set/mark iset
+                                     10
+                                     13))
+             (seq (interval.set/mark iset
+                                     12
+                                     14))
+             (seq (interval.set/mark iset
+                                     12
+                                     15)))
+          "Within a single existing segment"))
+
   (let [iset (-> interval.set/empty
                  (interval.set/mark 5
                                     10)
@@ -163,7 +181,7 @@
                                        50))))
         "Merging segments towards -Infinity")
 
-  (t/is (= (seq (sorted-set [0 5]
+ (t/is (= (seq (sorted-set [0 5]
                             [6 50]))
            (seq (-> interval.set/empty
                     (interval.set/mark 0
