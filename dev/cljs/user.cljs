@@ -1,4 +1,4 @@
-(ns user
+(ns cljs.user
 
   "For daydreaming in the REPL." 
 
