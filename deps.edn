@@ -1,32 +1,38 @@
-{:deps
- {org.clojure/clojure {:mvn/version "1.10.1"}}
-
- :paths
- ["src"]
-
- :aliases
+{:aliases
  {:cljs
-  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.9.10"}}
+  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.23"}}
    :main-opts  ["-m" "shadow.cljs.devtools.cli"]}
 
   :deploy
-  {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
-   :main-opts  ["-m" "deps-deploy.deps-deploy" "deploy" "interval.jar"]}
+  {:exec-args  {:artifact  "release.jar"
+                :installer :remote}
+   :exec-fn    deps-deploy.deps-deploy/deploy
+   :extra-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}}
 
   :dev
-  {:extra-deps  {criterium {:mvn/version "0.4.5"}}
-   :extra-paths ["dev"]}
+  {:extra-paths ["src/dev"
+                 "src/test"]
+   :extra-deps {org.clojure/test.check {:mvn/version "0.10.0"}}}
 
   :jar
-  {:extra-deps {seancorfield/depstar {:mvn/version "0.5.2"}}
-   :main-opts ["-m" "hf.depstar.jar" "interval.jar"]}
+  {:exec-args    {:jar "release.jar"}
+   :exec-fn      hf.depstar/jar
+   :replace-deps {seancorfield/depstar {:mvn/version "2.0.171"}}}
 
   :install
-  {:extra-deps {deps-deploy {:mvn/version "0.0.9"}}
-   :main-opts ["-m" "deps-deploy.deps-deploy" "install" "interval.jar"]}
+  {:exec-args  {:artifact  "release.jar"
+                :installer :local}
+   :exec-fn    deps-deploy.deps-deploy/deploy
+   :extra-deps {slipset/deps-deploy {:mvn/version "0.1.5"}}}
 
   :test
-  {:extra-deps  {lambdaisland/chui          {:mvn/version "0.0.117"}
-                 lambdaisland/kaocha        {:mvn/version "1.0-612"}
-                 lambdaisland/kaocha-cljs   {:mvn/version "0.0-71"}}
-   :extra-paths ["test"]}}}
+  {:extra-deps  {lambdaisland/chui        {:mvn/version "1.0.173"}
+                 lambdaisland/kaocha      {:mvn/version "1.0.829"}
+                 lambdaisland/kaocha-cljs {:mvn/version "0.0-71"}}
+   :extra-paths ["src/test"]}}
+ 
+ :deps
+ {org.clojure/clojure {:mvn/version "1.10.1"}}
+
+ :paths
+ ["src/main"]}

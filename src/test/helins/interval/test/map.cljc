@@ -3,21 +3,17 @@
 ;; file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-(ns dvlopt.interval.map-test
+(ns helins.interval.test.map
 
   ""
 
-  ;; Cf. https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
+  ;; For notation, see:  https://en.wikipedia.org/wiki/Allen%27s_interval_algebra
 
   {:author "Adam Helinski"}
 
-  (:require [clojure.core        :as clj]
-            [clojure.test        :as t]
-            [dvlopt.interval.map :as interval.map]
-            [dvlopt.interval.set :as interval.set]))
+  (:require [clojure.test        :as t]
+            [helins.interval.map :as interval.map]))
 
-
-;; TODO. Open intervals
 
 ;;;;;;;;;; Marking and erasing
 

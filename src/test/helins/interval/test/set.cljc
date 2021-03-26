@@ -3,14 +3,14 @@
 ;; file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-(ns dvlopt.interval.set-test
+(ns helins.interval.test.set
 
   ""
 
   {:author "Adam Helinski"}
 
   (:require [clojure.test        :as t]
-            [dvlopt.interval.set :as interval.set]))
+            [helins.interval.set :as interval.set]))
 
 
 ;;;;;;;;;;

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>dvlopt</groupId>
+  <groupId>io.helins</groupId>
   <artifactId>interval</artifactId>
   <version>0.0.0-beta2</version>
   <name>Interval</name>
   <description>Immutable interval trees and utilities</description>
-  <url>https://github.com/dvlopt/interval.cljc</url>
+  <url>https://github.com/helins/interval.cljc</url>
   <licenses>
     <license>
       <name>Eclipse Public License</name>
@@ -16,12 +16,14 @@
   <developers>
     <developer>
       <name>Adam Helinski</name>
+      <email>adam@helins.io</email>
+      <url>http://www.helins.io</url>
     </developer>
   </developers>
   <scm>
-    <url>https://github.com/dvlopt/interval.cljc</url>
-    <connection>scm:git:git://github.com/dvlopt/interval.cljc.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/dvlopt/interval.cljc.git</developerConnection>
+    <url>https://github.com/helins/interval.cljc</url>
+    <connection>scm:git:git://github.com/helins/interval.cljc.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/helins/interval.cljc.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
   <dependencies>
@@ -32,16 +34,12 @@
     </dependency>
   </dependencies>
   <build>
-    <sourceDirectory>src</sourceDirectory>
+    <sourceDirectory>src/main</sourceDirectory>
   </build>
   <repositories>
     <repository>
       <id>clojars</id>
       <url>https://repo.clojars.org/</url>
-    </repository>
-    <repository>
-      <id>sonatype</id>
-      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     </repository>
   </repositories>
   <distributionManagement>

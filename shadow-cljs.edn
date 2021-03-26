@@ -1,26 +1,24 @@
 {:builds
- {:lib-dev
-  {:modules    {:main {:entries [cljs.user
-                                 dvlopt.interval.map
-                                 dvlopt.interval.map-test
-                                 dvlopt.interval.set
-                                 dvlopt.interval.set-test
-                                 dvlopt.interval.util
-                                 dvlopt.interval.util-test]}}
-   :output-dir "public/js"
+ {:dev
+  {:asset-path "/js"
+   :modules    {:main {:entries [helins.interval.dev]}}
+   :output-dir "resources/public/js"
    :target     :browser}
-  
+
   :test
-  {:target    :browser-test
+  {:ns-regexp ".+"
    :runner-ns lambdaisland.chui.shadow.browser-runner
-   :test-dir  "chui"}}
+   :target    :browser-test
+   :test-dir  "resources/chui"}}
+
 
  :deps
  {:alias [:cljs]}
- 
+
+
  :dev-http
- {8080 "public"}
+ {8000 "resources/public"}
+
  
  :nrepl
- {:port 4000}
- }
+ {:port 14563}}

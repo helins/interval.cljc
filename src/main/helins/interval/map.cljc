@@ -3,7 +3,7 @@
 ;; file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-(ns dvlopt.interval.map
+(ns helins.interval.map
 
   ""
 
@@ -14,8 +14,8 @@
 
   (:require [clojure.core         :as clj]
             [clojure.set          :as clj.set]
-            [dvlopt.interval.set  :as interval.set]
-            [dvlopt.interval.util :as interval.util])
+            [helins.interval.set  :as interval.set]
+            [helins.interval.util :as interval.util])
   (:refer-clojure :exclude [empty]))
 
 
