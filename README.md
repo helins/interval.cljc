@@ -1,9 +1,10 @@
 # Interval
 
-[![Clojars
-Project](https://img.shields.io/clojars/v/dvlopt/interval.svg)](https://clojars.org/dvlopt/interval)
+[![Clojars](https://img.shields.io/clojars/v/dvlopt/interval.svg)](https://clojars.org/dvlopt/interval)
 
-[![cljdoc badge](https://cljdoc.org/badge/dvlopt/interval)](https://cljdoc.org/d/dvlopt/interval)
+[![Cljdoc](https://cljdoc.org/badge/dvlopt/interval)](https://cljdoc.org/d/dvlopt/interval)
+
+![CircleCI](https://circleci.com/gh/helins/interval.cljc.svg?style=shield)
 
 Compatible with Clojurescript.
 
