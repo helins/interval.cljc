@@ -11,6 +11,7 @@
 
   :dev
   {:extra-paths ["src/dev"
+                 "src/example"
                  "src/test"]
    :extra-deps {org.clojure/test.check {:mvn/version "0.10.0"}}}
 

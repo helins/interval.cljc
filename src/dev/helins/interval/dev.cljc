@@ -5,11 +5,12 @@
 
 (ns helins.interval.dev
 
-  "For daydreaming at the REPL." 
+  "For daydreaming at the REPL."
 
-  (:require [helins.interval.map  :as imap]
-            [helins.interval.set  :as iset]
-            [helins.interval.util :as interval.util]))
+  (:require [helins.interval.example.music]
+            [helins.interval.map            :as imap]
+            [helins.interval.set            :as iset]
+            [helins.interval.util           :as interval.util]))
 
 
 ;;;;;;;;;;
