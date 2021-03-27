@@ -12,6 +12,7 @@
 
 ;;;;;;;;;;
 
+
 (def too-hot
 
   "Simulating recording temperature above some threshold.
