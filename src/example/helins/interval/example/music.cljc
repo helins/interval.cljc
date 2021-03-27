@@ -21,7 +21,7 @@
    represent seconds."
 
   (-> imap/empty
-      ;; Broken C minor chord
+      ;; Broken C minor chord.
       (imap/mark  0  8 :c)
       (imap/mark  3  8 :e-flat)
       (imap/mark  5  8 :g)
@@ -42,6 +42,12 @@
 
      #{:c
        :e-flat})
+
+
+  ;; Nothing was being played at second 9.
+  ;;
+  (nil? (get music
+             9))
 
 
   ;; Expressed as a sequence, we see exactly how notes are played, when they start,
@@ -100,4 +106,32 @@
        :g})
 
 
+
+  ;; Modifying our C note and starting it later.
+  ;;
+  (def music-2
+       (imap/erase music
+                   0
+                   4
+                   :c))
+
+  
+  (nil? (get music-2
+             1))
+
+
+  (= (get music-2
+          4)
+
+     #{:c
+       :e-flat})
+
+
+  ;; Erasing is very flexible and permissive.
+  ;;
+  (= music
+     (imap/erase music
+                 0
+                 56456
+                 :whatever))
   )
