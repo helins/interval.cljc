@@ -7,22 +7,22 @@
 
   "For daydreaming at the REPL." 
 
-  (:require [helins.interval.map  :as interval.map]
-            [helins.interval.set  :as interval.set]
+  (:require [helins.interval.map  :as imap]
+            [helins.interval.set  :as iset]
             [helins.interval.util :as interval.util]))
 
 
 ;;;;;;;;;;
 
 
-(def imap
-     (-> interval.map/empty
-         (interval.map/mark 0   15  :a)
-         (interval.map/mark 12  nil :b)
-         (interval.map/mark 20  25  :c)
-         (interval.map/mark 30  nil :d)
-         (interval.map/mark 35  40  :e)
-         (interval.map/mark nil 0   :f)))
+(def im
+     (-> imap/empty
+         (imap/mark 0   15  :a)
+         (imap/mark 12  nil :b)
+         (imap/mark 20  25  :c)
+         (imap/mark 30  nil :d)
+         (imap/mark 35  40  :e)
+         (imap/mark nil 0   :f)))
 
 
 

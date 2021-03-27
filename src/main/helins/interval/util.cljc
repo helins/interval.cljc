@@ -16,7 +16,9 @@
 
 (defn cmp
 
-  ""
+  ;; Compare `a` and `b`, returning true if `a` is greater.
+  ;;
+  ;; Accounts for infinity (ie. nil).
 
   [a b]
 
@@ -46,7 +48,7 @@
 
 (defn disjoint?
 
-  ""
+  ;; Are these two intervals disjoint?
 
   [to from]
 
@@ -59,7 +61,7 @@
 
 (defn overlapping?
 
-  ;;
+  ;; Are these two intervals overlapping?
 
   [to from]
 
@@ -72,6 +74,8 @@
 
 (defn point<-
 
+  ;; Is point `a` stricly lesser than point `b`?
+  ;;
   ;; Handles nil as -Infinity.
 
   [a b]
@@ -86,7 +90,9 @@
 
 (defn point<=-
 
+  ;; Is point `a` lesser than or equal to point `b`?
   ;;
+  ;; Handles nil as -Infinity.
 
   [a b]
 
@@ -101,6 +107,8 @@
 
 (defn point<+
 
+  ;; Is point `a` stricly lesser than point `b`?
+  ;;
   ;; Handles nil as +Infinity.
 
   [a b]
@@ -115,7 +123,9 @@
 
 (defn point<=+
 
+  ;; Is point `a` lesser than or equal to point `b`?
   ;;
+  ;; Handles nil as +Infinity.
 
   [a b]
 

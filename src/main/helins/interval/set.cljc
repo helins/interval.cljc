@@ -5,7 +5,9 @@
 
 (ns helins.interval.set
 
-  ""
+  "Dedicated to interval sets.
+  
+   See README for overview and glossary."
 
   {:author "Adam Helinski"}
 
@@ -18,7 +20,7 @@
 
 (defn- -mark-rest
 
-  ;;
+  ;; Helper for [[mark]].
 
   [iset from to [[from-seg
                   to-seg
@@ -43,10 +45,9 @@
 
 
 
-
 (defn mark
 
-  ""
+  "In `iset`, adds an interval `[from to]`."
 
   [iset from to]
 
@@ -90,7 +91,7 @@
 
 (defn- -erase-rest
 
-  ;;
+  ;; Helper for [[erase]].
 
   [iset to [[from-seg
              to-seg
@@ -117,7 +118,7 @@
 
 (defn erase
 
-  ""
+  "In `iset`, removes interval `[from to]`."
 
   [iset from to]
 
@@ -154,6 +155,6 @@
 
 (def empty
 
-  ""
+  "Empty interval set."
 
   (sorted-set-by interval.util/cmp))
