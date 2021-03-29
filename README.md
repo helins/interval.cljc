@@ -244,6 +244,48 @@ Supposing we recorded temperature above a certain threshold, for a day:
 ```
 
 
+### Open intervals and infinity
+
+Infinity is designated by nil, meaning an absence of boundary:
+
+```clojure
+;; Interval from 5 to +Infinity
+;;
+[5 nil]
+
+
+;; Interval from -Infinity to 5
+;;
+[nil 5]
+
+
+
+;; Infinity
+;;
+[nil nil]
+```
+
+Hence, handling infinity happens naturally:
+
+```clojure
+;; An interval set with an interval from 5 to +Infinity.
+;;
+(def infinite-from-5
+     (iset/mark iset/empty
+                5
+                nil))
+
+
+;; Is there something at this very high point?
+;; Yes, a segment towards infinity proves that.
+;;
+(= (get infinite-from-5
+        78456544)
+
+   [5 nil])
+```
+
+
 ## Running tests
 
 On the JVM, using [Kaocha](https://github.com/lambdaisland/kaocha):
