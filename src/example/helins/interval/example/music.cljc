@@ -44,6 +44,15 @@
        :e-flat})
 
 
+  ;; Using standard `find`, we find the exact interval as well.
+  ;;
+  (= (find music
+           4)
+
+     [[3 5] #{:c
+              :e-flat}])
+
+
   ;; Nothing was being played at second 9.
   ;;
   (nil? (get music

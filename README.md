@@ -76,7 +76,7 @@ expressed in seconds:
 ### Querying a point an interval map
 
 A precise point is queried using the standard `get` function which returns a
-`ValueSet`.
+**ValueSet**.
 
 ```clojure
 ;; What notes are played at second 4?
@@ -94,9 +94,19 @@ A precise point is queried using the standard `get` function which returns a
            9))
 ```
 
+Standard `find` returns the interval as well:
+
+```clojure
+(= (find music
+         4)
+   
+   [[3 5] #{:c
+            :e-flat}])
+```
+
 ### Querying segments in an interval map
 
-Converting a map to a sequence shows all `Segments`.
+Converting a map to a sequence shows all **Segments**.
 
 We can see exactly how notes are played, when they start, end, how they overlap:
 
@@ -112,7 +122,7 @@ We can see exactly how notes are played, when they start, end, how they overlap:
          [[10 11] #{:g}]))
 ```
 
-It is often useful to query `Segments` for parts of an interval map. This is done
+It is often useful to query **Segments** for parts of an interval map. This is done
 by using standard `subseq` since an interval map is a Clojure sorted map.
 
 ```clojure
@@ -180,6 +190,7 @@ For instance, our C note is being played throughout the whole broken chord
 
    #{:c
      :e-flat})
+
 ```
 
 Erasing is very flexible and permissive:
