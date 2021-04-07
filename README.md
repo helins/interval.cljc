@@ -337,6 +337,14 @@ $ ./bin/dev/cljs
 ```
 
 
+## Credits
+
+These implementations are based on [this original idea](http://clj-me.cgrand.net/2012/03/16/a-poor-mans-interval-tree/).
+It took a lot of work overcoming fundamental issues (especially fragmentation)
+but it served as an important spark leading to upgrading existing sorted collections in
+a creative way.
+
+
 ## License
 
 Copyright © 2020 Adam Helinski
