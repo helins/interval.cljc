@@ -16,7 +16,8 @@
    :extra-deps {org.clojure/test.check {:mvn/version "0.10.0"}}}
 
   :jar
-  {:exec-args    {:jar "compiled/jvm/release.jar"}
+  {:exec-args    {:jar      "compiled/jvm/release.jar"
+                  :sync-pom true}
    :exec-fn      hf.depstar/jar
    :replace-deps {seancorfield/depstar {:mvn/version "2.0.171"}}}
 
@@ -33,7 +34,7 @@
   {:extra-paths ["src/test"]}}
  
  :deps
- {org.clojure/clojure {:mvn/version "1.10.1"}}
+ {}
 
  :paths
  ["src/main"]}
