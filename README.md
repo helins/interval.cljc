@@ -296,44 +296,35 @@ Hence, handling infinity happens naturally:
    [5 nil])
 ```
 
-
 ## Running tests
 
-On the JVM, using [Kaocha](https://github.com/lambdaisland/kaocha):
+Clojure, on the JVM, using [Kaocha](https://github.com/lambdaisland/kaocha):
 
 ```bash
 $ ./bin/test/jvm/run
-$ ./bin/test/jvm/watch
 ```
-On NodeJS, using [Kaocha-CLJS](https://github.com/lambdaisland/kaocha-cljs):
+Clojurescript, on NodeJS, using [Shadow-CLJS](https://github.com/thheller/shadow-cljs):
 
 ```bash
 $ ./bin/test/node/run
-$ ./bin/test/node/watch
-```
 
-In the browser, using [Chui](https://github.com/lambdaisland/chui):
-```
-$ ./bin/test/browser/compile
-# Then open ./resources/chui/index.html
-
-# For testing an advanced build
-$ ./bin/test/browser/advanced
+# Or testing an advanced build:
+$ ./bin/test/node/advanced
 ```
 
 
 ## Development
 
-Starting in Clojure JVM mode, mentioning an additional deps alias (here, a local
+Starting in Clojure JVM mode, mentioning an additional Deps alias (here, a local
 setup of NREPL):
 ```bash
 $ ./bin/dev/clojure :nrepl
 ```
 
-Starting in CLJS mode using Shadow-CLJS:
+Starting in CLJS mode using [Shadow-CLJS](https://github.com/thheller/shadow-cljs):
 ```bash
 $ ./bin/dev/cljs
-# Then open ./resources/public/index.html
+# Then open ./cljs/index.html
 ```
 
 
