@@ -48,10 +48,11 @@ Following terms are used in the examples:
 
 | Name | Description |
 |---|---|
-| Interval | A tuple `[Point Point]` designating an inclusive interval |
+| Interval | A tuple `[Point Point]` designating an interval (**start inclusive**, **end exclusive**) |
 | Point | An arbitrary numerical value (seconds, centimeters, inches, ...) or nil for infinity |
 | Segment | A tuple `[Interval ValueSet]` |
 | ValueSet | A set of arbitrary values |
+
 
 ### Defining an interval map
 
